@@ -107,7 +107,9 @@ einlesen. Dasselbe Format ist der geplante Übergabepunkt an den späteren Serve
 
 ## Beispieldaten
 
-Die Lagepläne für EG, 1. OG und 2. OG (`src/assets/grundrisse/`) sind echte Grundrisse.
-Bestand, Bereichsnamen und die Position der Bereiche darauf sind weiterhin **erfunden** und
-dienen nur der Veranschaulichung. Vor jedem Test über **Verwaltung → Bereiche & Plan** durch
-die tatsächliche Aufteilung ersetzen.
+Die Lagepläne für EG, 1. OG und 2. OG (`src/assets/grundrisse/`) sind echte Grundrisse, die
+Bereichsnamen (Infotheke, Kinderbibliothek, Michael-Ende-Kabinett, Gaming-Room, Romane,
+Graphothek, Lernstudio, …) stammen aus dem echten „Wo finde ich was?“-Wegweiser der
+Bibliothek. Die genaue **Position** der Bereiche auf dem Plan sowie der Bestand selbst sind
+weiterhin **erfunden** und dienen nur der Veranschaulichung. Vor jedem Test über
+**Verwaltung → Bereiche & Plan** durch die tatsächliche Positionierung ersetzen.
