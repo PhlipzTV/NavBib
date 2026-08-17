@@ -43,7 +43,7 @@ const SEED = {
   etagen: [
     { id: "e0", nr: 0, kurz: "EG", name: "Erdgeschoss", zweck: "Eingang, Ausleihe, Rückgabe, Café", bildUrl: grundrissEG },
     { id: "e1", nr: 1, kurz: "1. OG", name: "1. Obergeschoss", zweck: "Kinder- und Jugendbibliothek, Gaming-Room", bildUrl: grundriss1OG },
-    { id: "e2", nr: 2, kurz: "2. OG", name: "2. Obergeschoss", zweck: "Romane, Sachliteratur, Graphothek, Lernstudio", bildUrl: grundriss2OG },
+    { id: "e2", nr: 2, kurz: "2. OG", name: "2. Obergeschoss", zweck: "Romane, Sachliteratur, Graphothek, Lernstudios", bildUrl: grundriss2OG },
   ],
   bereiche: [
     { id: "b01", name: "Infotheke", etageId: "e0", x: 50, y: 25 },
@@ -60,7 +60,7 @@ const SEED = {
     { id: "b12", name: "Romane S–Z", etageId: "e2", x: 45, y: 32 },
     { id: "b13", name: "Graphothek", etageId: "e2", x: 58, y: 68 },
     { id: "b14", name: "Sachliteratur", etageId: "e2", x: 72, y: 34 },
-    { id: "b15", name: "Lernstudio", etageId: "e2", x: 90, y: 62 },
+    { id: "b15", name: "Lernstudios", etageId: "e2", x: 90, y: 62 },
   ],
   buecher: [
     { id: "m01", titel: "Die Vermessung der Welt", autor: "Daniel Kehlmann", signatur: "SL Kehl", medienart: "Buch", bereichId: "b11", regal: "14", reihe: "3", fach: "B" },
