@@ -67,7 +67,11 @@ docs/
 ```
 
 Die Gestaltung steckt als CSS-Block in `BibliotheksNavigator.jsx`. Kein Tailwind, keine
-weiteren Abhängigkeiten außer React und `lucide-react` für die Symbole.
+weiteren Abhängigkeiten außer React und `@phosphor-icons/react` für die Symbole.
+
+Die Formsprache lehnt sich an den öffentlichen Auftritt von Stadtbibliotheken an: warmer
+Sandstein-/Taupe-Ton als Leitfarbe, scharfe Kanten statt Rundungen, zurückhaltende
+Bewegung. Terrakotta markiert aktive Standorte und Interaktion.
 
 ---
 

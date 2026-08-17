@@ -1,26 +1,26 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import {
-  Search,
+  MagnifyingGlass,
   MapPin,
   ArrowLeft,
   Plus,
-  Pencil,
-  Trash2,
-  Save,
+  PencilSimple,
+  Trash,
+  FloppyDisk,
   X,
-  Download,
-  Upload,
-  RotateCcw,
-  Layers,
+  DownloadSimple,
+  UploadSimple,
+  ArrowCounterClockwise,
+  Stack,
   BookOpen,
-  Settings,
+  Gear,
   Crosshair,
   Check,
-  AlertTriangle,
+  Warning,
   Lock,
-  ShieldAlert,
-  LogOut,
-} from "lucide-react";
+  ShieldWarning,
+  SignOut,
+} from "@phosphor-icons/react";
 import { lesen, schreiben } from "./speicher";
 
 /* ------------------------------------------------------------------
@@ -95,19 +95,21 @@ function suche(buecher, bereiche, q) {
 /* ---------------------------- Design-Tokens ---------------------- */
 
 const CSS = `
-@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap');
 
 .bn {
-  --stone:   #E9EBE7;
-  --paper:   #FFFFFF;
-  --ink:     #16181B;
-  --ink2:    #4E545B;
-  --concrete:#989EA3;
-  --line:    #D3D6D0;
-  --signal:  #2340C8;
-  --signal-2:#E4E8FA;
-  --warn:    #A8481B;
-  --ui: 'Archivo', ui-sans-serif, system-ui, 'Segoe UI', sans-serif;
+  --stone:      #F5F0E6;
+  --paper:      #FFFFFF;
+  --ink:        #241F18;
+  --ink2:       #675C4C;
+  --concrete:   #A89A80;
+  --line:       #E3DAC9;
+  --taupe:      #8C7C5E;
+  --taupe-deep: #5B4E39;
+  --signal:     #A6482A;
+  --signal-2:   #F4E3D6;
+  --warn:       #7A2E1C;
+  --ui: 'Manrope', ui-sans-serif, system-ui, 'Segoe UI', sans-serif;
   --mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', monospace;
 
   font-family: var(--ui);
@@ -115,6 +117,21 @@ const CSS = `
   background: var(--stone);
   min-height: 100%;
   -webkit-font-smoothing: antialiased;
+}
+@media (prefers-color-scheme: dark) {
+  .bn {
+    --stone:      #1C1712;
+    --paper:      #241E17;
+    --ink:        #F1E9DC;
+    --ink2:       #C1B29B;
+    --concrete:   #8C7F68;
+    --line:       #3B3226;
+    --taupe:      #A08D6B;
+    --taupe-deep: #241E17;
+    --signal:     #E0855C;
+    --signal-2:   #3E2B21;
+    --warn:       #E3866A;
+  }
 }
 .bn *, .bn *::before, .bn *::after { box-sizing: border-box; }
 .bn button { font: inherit; color: inherit; cursor: pointer; }
@@ -124,31 +141,33 @@ const CSS = `
 .bn-shell { max-width: 62rem; margin: 0 auto; padding: 0 1rem 5rem; }
 .bn-head {
   position: sticky; top: 0; z-index: 30;
-  background: var(--stone);
-  border-bottom: 1px solid var(--line);
+  background: var(--taupe);
+  border-bottom: 1px solid var(--taupe-deep);
 }
+.bn-head, .bn-head button { color: #fff; }
 .bn-head-in {
   max-width: 62rem; margin: 0 auto; padding: .7rem 1rem;
   display: flex; align-items: center; gap: .75rem; justify-content: space-between;
 }
-.bn-wordmark { display: flex; align-items: baseline; gap: .5rem; min-width: 0; }
+.bn-wordmark { display: flex; align-items: center; gap: .5rem; min-width: 0; }
+.bn-wordmark svg { flex: none; color: #fff; }
 .bn-wordmark b {
   font-weight: 700; font-size: .95rem; letter-spacing: -.01em;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .bn-wordmark span {
   font-family: var(--mono); font-size: .62rem; letter-spacing: .14em;
-  text-transform: uppercase; color: var(--concrete); white-space: nowrap;
+  text-transform: uppercase; color: rgba(255,255,255,.68); white-space: nowrap;
 }
 
 /* --- Umschalter --- */
-.bn-toggle { display: flex; border: 1px solid var(--line); border-radius: 2px; background: var(--paper); flex: none; }
+.bn-toggle { display: flex; border: 1px solid rgba(255,255,255,.38); border-radius: 0; background: transparent; flex: none; }
 .bn-toggle button {
   border: 0; background: transparent; padding: .42rem .7rem;
-  font-size: .74rem; font-weight: 600; letter-spacing: .02em; color: var(--ink2);
+  font-size: .74rem; font-weight: 600; letter-spacing: .02em; color: rgba(255,255,255,.82);
   display: flex; align-items: center; gap: .35rem;
 }
-.bn-toggle button[aria-pressed="true"] { background: var(--ink); color: #fff; }
+.bn-toggle button[aria-pressed="true"] { background: #fff; color: var(--taupe-deep); }
 
 /* --- Typo --- */
 .bn-eyebrow {
@@ -165,7 +184,7 @@ const CSS = `
 .bn-searchwrap > svg { position: absolute; left: .85rem; top: 50%; transform: translateY(-50%); color: var(--concrete); }
 .bn-search {
   width: 100%; padding: .95rem 2.6rem .95rem 2.75rem;
-  border: 1px solid var(--line); border-radius: 2px; background: var(--paper);
+  border: 1px solid var(--line); border-radius: 0; background: var(--paper);
   font-size: 1rem; outline: none;
 }
 .bn-search:focus-visible { border-color: var(--signal); box-shadow: 0 0 0 3px var(--signal-2); }
@@ -192,14 +211,14 @@ const CSS = `
 .bn-hit-loc { font-size: .74rem; color: var(--concrete); margin-top: .25rem; }
 
 /* --- Karten --- */
-.bn-card { background: var(--paper); border: 1px solid var(--line); border-radius: 2px; }
+.bn-card { background: var(--paper); border: 1px solid var(--line); border-radius: 0; }
 .bn-pad { padding: 1rem; }
 
 /* --- Wegweiser-Zeile --- */
 .bn-crumbs { display: flex; flex-wrap: wrap; gap: .3rem; margin-top: .9rem; }
 .bn-crumb {
   border: 1px solid var(--line); background: var(--paper);
-  padding: .4rem .6rem; border-radius: 2px; line-height: 1.1;
+  padding: .4rem .6rem; border-radius: 0; line-height: 1.1;
 }
 .bn-crumb dt {
   font-family: var(--mono); font-size: .58rem; letter-spacing: .12em;
@@ -217,7 +236,7 @@ const CSS = `
 }
 .bn-input, .bn-select {
   width: 100%; padding: .55rem .6rem; border: 1px solid var(--line);
-  border-radius: 2px; background: var(--paper); outline: none;
+  border-radius: 0; background: var(--paper); outline: none;
   font-size: .92rem;
 }
 .bn-input:focus-visible, .bn-select:focus-visible { border-color: var(--signal); box-shadow: 0 0 0 3px var(--signal-2); }
@@ -227,7 +246,7 @@ const CSS = `
 /* --- Buttons --- */
 .bn-btn {
   border: 1px solid var(--line); background: var(--paper); color: var(--ink);
-  padding: .5rem .8rem; border-radius: 2px; font-size: .82rem; font-weight: 600;
+  padding: .5rem .8rem; border-radius: 0; font-size: .82rem; font-weight: 600;
   display: inline-flex; align-items: center; gap: .4rem;
 }
 .bn-btn:hover { border-color: var(--ink2); }
@@ -238,7 +257,7 @@ const CSS = `
 .bn-btn[disabled] { opacity: .45; cursor: not-allowed; }
 .bn-iconbtn {
   border: 1px solid transparent; background: transparent; padding: .4rem;
-  border-radius: 2px; line-height: 0; color: var(--ink2);
+  border-radius: 0; line-height: 0; color: var(--ink2);
 }
 .bn-iconbtn:hover { border-color: var(--line); background: var(--paper); }
 .bn-iconbtn:focus-visible { outline: none; border-color: var(--signal); box-shadow: 0 0 0 3px var(--signal-2); }
@@ -265,7 +284,7 @@ const CSS = `
   display: flex; gap: .55rem; align-items: flex-start;
   border: 1px solid var(--line); border-left: 3px solid var(--concrete);
   background: var(--paper); padding: .65rem .75rem; font-size: .8rem; color: var(--ink2);
-  border-radius: 2px;
+  border-radius: 0;
 }
 .bn-note.is-signal { border-left-color: var(--signal); }
 
@@ -286,26 +305,79 @@ const CSS = `
   .bn-slab { transition: none; }
 }
 
-.bn-planwrap { position: relative; background: var(--paper); border: 1px solid var(--line); border-radius: 2px; }
+.bn-planwrap { position: relative; background: var(--paper); border: 1px solid var(--line); border-radius: 0; }
 .bn-plan { display: block; width: 100%; height: auto; }
 .bn-plan.is-picking { cursor: crosshair; }
 
 .bn-scroll { max-height: 24rem; overflow-y: auto; }
 
-/* --- Zugangssperre --- */
-.bn-gate { max-width: 22rem; margin: 3rem auto 0; text-align: left; }
-.bn-gate-icon {
-  width: 2.4rem; height: 2.4rem; border: 1px solid var(--line); background: var(--paper);
-  border-radius: 2px; display: flex; align-items: center; justify-content: center; color: var(--ink2);
+/* --- Ankunft: Hero-Band --- */
+.bn-heroband {
+  position: relative; margin: 0 -1rem; overflow: hidden;
+  min-height: 9.5rem; display: flex; align-items: flex-end;
+  animation: bnRise .5s cubic-bezier(.16,1,.3,1) both;
 }
+.bn-heroband-deco { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; display: block; }
+.bn-heroband-in { position: relative; z-index: 1; padding: 1.5rem 1rem 1.7rem; }
+.bn-heroband .bn-eyebrow { color: rgba(255,255,255,.72); }
+.bn-heroband .bn-h1 { color: #fff; }
+
+.bn-search-raised {
+  margin-top: -1.6rem !important; position: relative; z-index: 2;
+  box-shadow: 0 14px 30px -20px rgba(36,31,24,.45);
+}
+
+/* --- Auf einen Blick --- */
+.bn-glance {
+  display: grid; grid-template-columns: 1.2fr 1fr; border: 1px solid var(--line);
+  margin-top: 1.6rem; animation: bnRise .5s cubic-bezier(.16,1,.3,1) both;
+}
+.bn-glance-list { background: var(--taupe); color: #fff; padding: 1.1rem 1.1rem 1.2rem; }
+.bn-glance-h {
+  font-family: var(--mono); font-size: .6rem; letter-spacing: .14em; text-transform: uppercase;
+  color: rgba(255,255,255,.68); margin: 0 0 .6rem;
+}
+.bn-glance-list ul { list-style: none; margin: 0; padding: 0; }
+.bn-glance-list li {
+  display: flex; gap: .6rem; align-items: baseline; padding: .4rem 0;
+  border-top: 1px solid rgba(255,255,255,.16);
+}
+.bn-glance-list li:first-child { border-top: 0; }
+.bn-glance-kurz { font-family: var(--mono); font-size: .72rem; color: rgba(255,255,255,.75); flex: none; width: 2.6rem; }
+.bn-glance-txt { min-width: 0; display: flex; flex-direction: column; }
+.bn-glance-txt b { font-size: .88rem; font-weight: 600; }
+.bn-glance-txt small { font-size: .74rem; color: rgba(255,255,255,.7); }
+.bn-glance-stat { background: var(--paper); padding: 1.1rem; display: flex; flex-direction: column; gap: .2rem; }
+.bn-glance-num { font-family: var(--mono); font-size: 2.3rem; font-weight: 500; line-height: 1; margin: 0; color: var(--signal); }
+.bn-glance-cap { font-size: .82rem; color: var(--ink2); margin: 0 0 .8rem; }
+.bn-glance-hint { font-size: .78rem; color: var(--concrete); margin: auto 0 0; }
+@media (max-width: 640px) { .bn-glance { grid-template-columns: 1fr; } }
+
+/* --- Zugangssperre --- */
+.bn-gatepage { background: var(--taupe-deep); margin: 0 -1rem; padding: 0 1rem; }
+.bn-gate { max-width: 22rem; margin: 0 auto; padding: 3rem 0; text-align: left; }
+.bn-gate-icon {
+  width: 2.4rem; height: 2.4rem; border: 1px solid rgba(255,255,255,.28); background: rgba(255,255,255,.08);
+  border-radius: 0; display: flex; align-items: center; justify-content: center; color: #fff;
+}
+.bn-gate .bn-eyebrow { color: rgba(255,255,255,.62); }
+.bn-gate .bn-h1 { color: #fff; }
+.bn-gate .bn-btn.is-primary { background: #fff; border-color: #fff; color: var(--taupe-deep); }
+.bn-gate .bn-btn:not(.is-primary) { color: #fff; border-color: rgba(255,255,255,.38); background: transparent; }
+.bn-gate .bn-note { background: rgba(255,255,255,.07); border-color: rgba(255,255,255,.2); color: rgba(255,255,255,.78); }
 .bn-pin {
-  width: 100%; padding: .8rem .7rem; border: 1px solid var(--line); border-radius: 2px;
-  background: var(--paper); font-family: var(--mono); font-size: 1.4rem;
+  width: 100%; padding: .8rem .7rem; border: 1px solid var(--line); border-radius: 0;
+  background: var(--paper); color: var(--ink); font-family: var(--mono); font-size: 1.4rem;
   letter-spacing: .5em; text-align: center; outline: none;
 }
 .bn-pin:focus-visible { border-color: var(--signal); box-shadow: 0 0 0 3px var(--signal-2); }
-.bn-pin.is-fehler { border-color: var(--warn); }
-.bn-gate-fehler { color: var(--warn); font-size: .8rem; margin: .5rem 0 0; }
+.bn-pin.is-fehler { border-color: #E8A98F; }
+.bn-gate-fehler { color: #F0B49C; font-size: .8rem; margin: .5rem 0 0; }
+
+@keyframes bnRise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .bn-heroband, .bn-glance { animation: none; }
+}
 
 @media (max-width: 560px) {
   .bn-grid3 { grid-template-columns: 1fr 1fr; }
@@ -334,7 +406,7 @@ function EtagenStapel({ etagen, aktivEtageId, marker, onSelect }) {
   return (
     <svg
       className="bn-stack"
-      viewBox={`0 0 200 ${hoehe}`}
+      viewBox={`-32 0 232 ${hoehe}`}
       role="img"
       aria-label="Schematischer Aufbau des Gebäudes nach Etagen"
     >
@@ -347,8 +419,8 @@ function EtagenStapel({ etagen, aktivEtageId, marker, onSelect }) {
           <g key={et.id} className="bn-slab" style={{ opacity: aktiv ? 1 : 0.32 }}>
             <polygon
               points={pts}
-              fill={aktiv ? "#E4E8FA" : "#FFFFFF"}
-              stroke={aktiv ? "#2340C8" : "#D3D6D0"}
+              fill={aktiv ? "var(--signal-2)" : "var(--paper)"}
+              stroke={aktiv ? "var(--signal)" : "var(--line)"}
               strokeWidth={aktiv ? 1.4 : 1}
               onClick={onSelect ? () => onSelect(et.id) : undefined}
               style={{ cursor: onSelect ? "pointer" : "default" }}
@@ -359,16 +431,16 @@ function EtagenStapel({ etagen, aktivEtageId, marker, onSelect }) {
               textAnchor="end"
               fontSize="9"
               fontFamily="'IBM Plex Mono', monospace"
-              fill={aktiv ? "#2340C8" : "#989EA3"}
+              fill={aktiv ? "var(--signal)" : "var(--concrete)"}
               fontWeight={aktiv ? 500 : 400}
             >
               {et.kurz}
             </text>
             {p && (
               <>
-                <circle className="bn-pulse" cx={p.x} cy={p.y} r="2.2" fill="#2340C8" />
-                <circle cx={p.x} cy={p.y} r="3.2" fill="#2340C8" />
-                <line x1={p.x} y1={p.y - 3.2} x2={p.x} y2={p.y - 14} stroke="#2340C8" strokeWidth="1.2" />
+                <circle className="bn-pulse" cx={p.x} cy={p.y} r="2.2" fill="var(--signal)" />
+                <circle cx={p.x} cy={p.y} r="3.2" fill="var(--signal)" />
+                <line x1={p.x} y1={p.y - 3.2} x2={p.x} y2={p.y - 14} stroke="var(--signal)" strokeWidth="1.2" />
               </>
             )}
           </g>
@@ -405,14 +477,14 @@ function Grundriss({ etage, bereiche, aktivBereichId, picking, onPick, kompakt }
           <image href={etage.bildUrl} x="0" y="0" width="100" height="72" preserveAspectRatio="xMidYMid slice" />
         ) : (
           <>
-            <rect x="3" y="3" width="94" height="66" fill="#FBFBFA" stroke="#D3D6D0" strokeWidth="0.7" />
+            <rect x="3" y="3" width="94" height="66" fill="var(--stone)" stroke="var(--line)" strokeWidth="0.7" />
             {/* Erschließungskern: Treppe und Aufzug */}
-            <rect x="44" y="52" width="12" height="14" fill="#EDEEEA" stroke="#D3D6D0" strokeWidth="0.5" />
-            <text x="50" y="60.5" textAnchor="middle" fontSize="3" fill="#989EA3" fontFamily="'IBM Plex Mono', monospace">
+            <rect x="44" y="52" width="12" height="14" fill="var(--line)" stroke="var(--concrete)" strokeWidth="0.5" />
+            <text x="50" y="60.5" textAnchor="middle" fontSize="3" fill="var(--concrete)" fontFamily="'IBM Plex Mono', monospace">
               TREPPE
             </text>
-            <path d="M3 45 H97" stroke="#E4E5E1" strokeWidth="0.4" />
-            <path d="M50 3 V45" stroke="#E4E5E1" strokeWidth="0.4" />
+            <path d="M3 45 H97" stroke="var(--line)" strokeWidth="0.4" />
+            <path d="M50 3 V45" stroke="var(--line)" strokeWidth="0.4" />
           </>
         )}
 
@@ -426,11 +498,11 @@ function Grundriss({ etage, bereiche, aktivBereichId, picking, onPick, kompakt }
                 cx={x}
                 cy={y}
                 r={aktiv ? 2.6 : 1.5}
-                fill={aktiv ? "#2340C8" : "#989EA3"}
-                stroke="#FFFFFF"
+                fill={aktiv ? "var(--signal)" : "var(--concrete)"}
+                stroke="var(--paper)"
                 strokeWidth="0.6"
               />
-              {aktiv && <circle className="bn-pulse" cx={x} cy={y} r="2.6" fill="#2340C8" />}
+              {aktiv && <circle className="bn-pulse" cx={x} cy={y} r="2.6" fill="var(--signal)" />}
               {(!kompakt || aktiv) && (
                 <text
                   x={x}
@@ -438,8 +510,8 @@ function Grundriss({ etage, bereiche, aktivBereichId, picking, onPick, kompakt }
                   textAnchor="middle"
                   fontSize={aktiv ? "3.4" : "2.6"}
                   fontWeight={aktiv ? 600 : 400}
-                  fill={aktiv ? "#2340C8" : "#4E545B"}
-                  fontFamily="'Archivo', sans-serif"
+                  fill={aktiv ? "var(--signal)" : "var(--ink2)"}
+                  fontFamily="'Manrope', sans-serif"
                 >
                   {b.name}
                 </text>
@@ -468,7 +540,7 @@ function BesucherAnsicht({ daten }) {
     return (
       <div className="bn-shell">
         <button className="bn-btn is-ghost" style={{ marginTop: "1rem", paddingLeft: 0 }} onClick={() => setGewaehlt(null)}>
-          <ArrowLeft size={15} strokeWidth={1.8} /> Zurück zur Suche
+          <ArrowLeft size={15} weight="regular" /> Zurück zur Suche
         </button>
 
         <p className="bn-eyebrow" style={{ marginTop: ".9rem" }}>
@@ -481,7 +553,7 @@ function BesucherAnsicht({ daten }) {
 
         {!bereich || !etage ? (
           <div className="bn-note" style={{ marginTop: "1rem" }}>
-            <AlertTriangle size={16} strokeWidth={1.8} />
+            <Warning size={16} weight="regular" />
             <span>Für dieses Medium ist noch kein Standort hinterlegt. Bitte an der Information nachfragen.</span>
           </div>
         ) : (
@@ -536,13 +608,22 @@ function BesucherAnsicht({ daten }) {
 
   return (
     <div className="bn-shell">
-      <p className="bn-eyebrow" style={{ marginTop: "1.4rem" }}>
-        Medium finden
-      </p>
-      <h1 className="bn-h1">Wo steht mein Buch?</h1>
+      <div className="bn-heroband">
+        <svg className="bn-heroband-deco" viewBox="0 0 400 140" preserveAspectRatio="none" aria-hidden="true">
+          <polygon points="0,0 400,0 400,78 0,140" fill="var(--taupe)" />
+          <polygon points="0,0 400,0 400,44 0,96" fill="var(--taupe-deep)" opacity="0.5" />
+          {Array.from({ length: 6 }).map((_, i) => (
+            <line key={i} x1="0" y1={20 + i * 18} x2="400" y2={6 + i * 18} stroke="rgba(255,255,255,.1)" strokeWidth="1" />
+          ))}
+        </svg>
+        <div className="bn-heroband-in">
+          <p className="bn-eyebrow">Medium finden</p>
+          <h1 className="bn-h1">Wo steht mein Buch?</h1>
+        </div>
+      </div>
 
-      <div className="bn-searchwrap">
-        <Search size={18} strokeWidth={1.8} />
+      <div className="bn-searchwrap bn-search-raised">
+        <MagnifyingGlass size={18} weight="regular" />
         <input
           className="bn-search"
           value={q}
@@ -553,16 +634,35 @@ function BesucherAnsicht({ daten }) {
         />
         {q && (
           <button className="bn-clear" onClick={() => setQ("")} aria-label="Eingabe löschen">
-            <X size={17} strokeWidth={1.8} />
+            <X size={17} weight="regular" />
           </button>
         )}
       </div>
 
       {!q && (
-        <div className="bn-empty">
-          Tippen Sie einen Titel, einen Autor oder eine Signatur ein.
-          <br />
-          Sie bekommen Etage, Bereich, Regal, Reihe und Fach angezeigt.
+        <div className="bn-glance">
+          <div className="bn-glance-list">
+            <p className="bn-glance-h">Etagen</p>
+            <ul>
+              {[...daten.etagen]
+                .sort((a, b) => a.nr - b.nr)
+                .map((e) => (
+                  <li key={e.id}>
+                    <span className="bn-glance-kurz">{e.kurz}</span>
+                    <span className="bn-glance-txt">
+                      <b>{e.name}</b>
+                      <small>{e.zweck}</small>
+                    </span>
+                  </li>
+                ))}
+            </ul>
+          </div>
+          <div className="bn-glance-stat">
+            <p className="bn-glance-h">Bestand</p>
+            <p className="bn-glance-num">{daten.buecher.length}</p>
+            <p className="bn-glance-cap">Medien in {daten.bereiche.length} Bereichen</p>
+            <p className="bn-glance-hint">Titel, Autor oder Signatur oben eingeben, um den Standort zu finden.</p>
+          </div>
         </div>
       )}
 
@@ -596,7 +696,7 @@ function BesucherAnsicht({ daten }) {
                         {et ? `${et.kurz} · ${be.name} · Regal ${b.regal}` : "Standort offen"}
                       </span>
                     </span>
-                    <MapPin size={16} strokeWidth={1.8} style={{ marginLeft: "auto", flex: "none", color: "#2340C8" }} />
+                    <MapPin size={16} weight="regular" style={{ marginLeft: "auto", flex: "none", color: "var(--signal)" }} />
                   </button>
                 </li>
               );
@@ -674,7 +774,7 @@ function BuchFormular({ start, bereiche, etagen, onSpeichern, onAbbrechen }) {
       </div>
       <div style={{ display: "flex", gap: ".45rem", marginTop: ".3rem" }}>
         <button className="bn-btn is-primary" disabled={!gueltig} onClick={() => onSpeichern(f)}>
-          <Save size={15} strokeWidth={1.8} /> Speichern
+          <FloppyDisk size={15} weight="regular" /> Speichern
         </button>
         <button className="bn-btn" onClick={onAbbrechen}>
           Abbrechen
@@ -715,7 +815,7 @@ function BuecherTab({ daten, setDaten }) {
           aria-label="Bestand durchsuchen"
         />
         <button className="bn-btn is-primary" style={{ flex: "none" }} onClick={() => setBearbeite("neu")}>
-          <Plus size={15} strokeWidth={2} /> Neu
+          <Plus size={15} weight="regular" /> Neu
         </button>
       </div>
 
@@ -759,10 +859,10 @@ function BuecherTab({ daten, setDaten }) {
                 </div>
               </div>
               <button className="bn-iconbtn" onClick={() => setBearbeite(b.id)} aria-label={`${b.titel} bearbeiten`}>
-                <Pencil size={15} strokeWidth={1.8} />
+                <PencilSimple size={15} weight="regular" />
               </button>
               <button className="bn-iconbtn" onClick={() => loeschen(b.id)} aria-label={`${b.titel} löschen`}>
-                <Trash2 size={15} strokeWidth={1.8} />
+                <Trash size={15} weight="regular" />
               </button>
             </div>
           );
@@ -819,7 +919,7 @@ function BereicheTab({ daten, setDaten }) {
       </label>
 
       <div className={"bn-note" + (aktiv ? " is-signal" : "")} style={{ marginBottom: ".7rem" }}>
-        <Crosshair size={15} strokeWidth={1.8} style={{ flex: "none", marginTop: ".1rem" }} />
+        <Crosshair size={15} weight="regular" style={{ flex: "none", marginTop: ".1rem" }} />
         <span>
           {aktiv
             ? `„${daten.bereiche.find((b) => b.id === aktiv)?.name}“ ist ausgewählt — in den Plan tippen, um die Position zu setzen.`
@@ -838,7 +938,7 @@ function BereicheTab({ daten, setDaten }) {
           aria-label="Name des neuen Bereichs"
         />
         <button className="bn-btn is-primary" style={{ flex: "none" }} onClick={anlegen} disabled={!neuName.trim()}>
-          <Plus size={15} strokeWidth={2} /> Anlegen
+          <Plus size={15} weight="regular" /> Anlegen
         </button>
       </div>
 
@@ -851,9 +951,9 @@ function BereicheTab({ daten, setDaten }) {
                 className="bn-iconbtn"
                 onClick={() => setAktiv(aktiv === b.id ? null : b.id)}
                 aria-label={`${b.name} auswählen`}
-                style={{ color: aktiv === b.id ? "#2340C8" : undefined }}
+                style={{ color: aktiv === b.id ? "var(--signal)" : undefined }}
               >
-                {aktiv === b.id ? <Check size={15} strokeWidth={2} /> : <MapPin size={15} strokeWidth={1.8} />}
+                {aktiv === b.id ? <Check size={15} weight="regular" /> : <MapPin size={15} weight="regular" />}
               </button>
               <div className="bn-row-main">
                 <div className="bn-row-t">{b.name}</div>
@@ -862,7 +962,7 @@ function BereicheTab({ daten, setDaten }) {
                 </div>
               </div>
               <button className="bn-iconbtn" onClick={() => loeschen(b.id)} aria-label={`${b.name} löschen`}>
-                <Trash2 size={15} strokeWidth={1.8} />
+                <Trash size={15} weight="regular" />
               </button>
             </div>
           );
@@ -882,7 +982,7 @@ function EtagenTab({ daten, setDaten }) {
   return (
     <div style={{ marginTop: ".9rem" }}>
       <div className="bn-note" style={{ marginBottom: ".8rem" }}>
-        <Layers size={15} strokeWidth={1.8} style={{ flex: "none", marginTop: ".1rem" }} />
+        <Stack size={15} weight="regular" style={{ flex: "none", marginTop: ".1rem" }} />
         <span>
           Sobald echte Lagepläne vorliegen: Bild-URL pro Etage eintragen. Der Plan ersetzt dann die schematische
           Darstellung, die Bereichspunkte bleiben an ihrer Position.
@@ -995,26 +1095,26 @@ function DatenTab({ daten, setDaten, status }) {
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: ".45rem", marginTop: ".8rem" }}>
         <button className="bn-btn" onClick={exportieren}>
-          <Download size={15} strokeWidth={1.8} /> Daten sichern
+          <DownloadSimple size={15} weight="regular" /> Daten sichern
         </button>
         <button className="bn-btn" onClick={() => fileRef.current?.click()}>
-          <Upload size={15} strokeWidth={1.8} /> Daten einlesen
+          <UploadSimple size={15} weight="regular" /> Daten einlesen
         </button>
         <button className="bn-btn is-danger" onClick={zuruecksetzen}>
-          <RotateCcw size={15} strokeWidth={1.8} /> Auf Beispieldaten zurücksetzen
+          <ArrowCounterClockwise size={15} weight="regular" /> Auf Beispieldaten zurücksetzen
         </button>
         <input ref={fileRef} type="file" accept="application/json" onChange={importieren} style={{ display: "none" }} />
       </div>
 
       {meldung && (
         <div className="bn-note is-signal" style={{ marginTop: ".8rem" }}>
-          <Check size={15} strokeWidth={2} style={{ flex: "none", marginTop: ".1rem" }} />
+          <Check size={15} weight="regular" style={{ flex: "none", marginTop: ".1rem" }} />
           <span>{meldung}</span>
         </div>
       )}
 
       <div className="bn-note" style={{ marginTop: ".8rem" }}>
-        <AlertTriangle size={15} strokeWidth={1.8} style={{ flex: "none", marginTop: ".1rem" }} />
+        <Warning size={15} weight="regular" style={{ flex: "none", marginTop: ".1rem" }} />
         <span>
           Dieser Stand läuft ohne eigenen Server. Die Daten liegen im Browserspeicher dieses Geräts —
           gut zum Erproben, nicht für den Echtbetrieb mit mehreren Arbeitsplätzen. Der JSON-Export ist der
@@ -1044,10 +1144,11 @@ function PinSperre({ erwartet, onEntsperrt, onZurueck }) {
   };
 
   return (
+    <div className="bn-gatepage">
     <div className="bn-shell">
       <div className="bn-gate">
         <div className="bn-gate-icon">
-          <Lock size={17} strokeWidth={1.8} />
+          <Lock size={17} weight="regular" />
         </div>
         <p className="bn-eyebrow" style={{ marginTop: ".8rem" }}>
           Nur für Mitarbeitende
@@ -1085,13 +1186,14 @@ function PinSperre({ erwartet, onEntsperrt, onZurueck }) {
         </div>
 
         <div className="bn-note" style={{ marginTop: "1.2rem" }}>
-          <ShieldAlert size={15} strokeWidth={1.8} style={{ flex: "none", marginTop: ".1rem" }} />
+          <ShieldWarning size={15} weight="regular" style={{ flex: "none", marginTop: ".1rem" }} />
           <span>
             Diese PIN hält neugierige Besucher vom Bearbeiten ab. Sie ist kein Schutz gegen einen Angriff —
             im Testbetrieb liegt sie im Browser und ist auslesbar. Echter Zugriffsschutz kommt mit dem Serverdienst.
           </span>
         </div>
       </div>
+    </div>
     </div>
   );
 }
@@ -1103,8 +1205,8 @@ function VerwaltungsAnsicht({ daten, setDaten, status, onAbmelden }) {
   const tabs = [
     ["buecher", "Medien", BookOpen],
     ["bereiche", "Bereiche & Plan", MapPin],
-    ["etagen", "Etagen", Layers],
-    ["daten", "Daten", Settings],
+    ["etagen", "Etagen", Stack],
+    ["daten", "Daten", Gear],
   ];
 
   return (
@@ -1117,7 +1219,7 @@ function VerwaltungsAnsicht({ daten, setDaten, status, onAbmelden }) {
           <h1 className="bn-h1">Bestand und Standorte pflegen</h1>
         </div>
         <button className="bn-btn" style={{ flex: "none" }} onClick={onAbmelden}>
-          <LogOut size={15} strokeWidth={1.8} /> Sperren
+          <SignOut size={15} weight="regular" /> Sperren
         </button>
       </div>
 
@@ -1131,7 +1233,7 @@ function VerwaltungsAnsicht({ daten, setDaten, status, onAbmelden }) {
             onClick={() => setTab(id)}
           >
             <span style={{ display: "inline-flex", alignItems: "center", gap: ".35rem" }}>
-              <Icon size={14} strokeWidth={1.8} /> {label}
+              <Icon size={14} weight="regular" /> {label}
             </span>
           </button>
         ))}
@@ -1142,6 +1244,18 @@ function VerwaltungsAnsicht({ daten, setDaten, status, onAbmelden }) {
       {tab === "etagen" && <EtagenTab daten={daten} setDaten={setDaten} />}
       {tab === "daten" && <DatenTab daten={daten} setDaten={setDaten} status={status} />}
     </div>
+  );
+}
+
+/* ---------------------------- Signet ------------------------------ */
+
+function Signet() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+      <polygon points="2,20 9,20 9,10 2,16" fill="currentColor" opacity=".5" />
+      <polygon points="9,20 15,20 15,6 9,10" fill="currentColor" opacity=".8" />
+      <polygon points="15,20 22,20 22,12 15,6" fill="currentColor" />
+    </svg>
   );
 }
 
@@ -1192,15 +1306,18 @@ export default function BibliotheksNavigator() {
       <header className="bn-head">
         <div className="bn-head-in">
           <div className="bn-wordmark">
-            <b>{daten?.einrichtung || "Stadtbibliothek"}</b>
-            <span>Wegweiser</span>
+            <Signet />
+            <span style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
+              <b>{daten?.einrichtung || "Stadtbibliothek"}</b>
+              <span>Wegweiser</span>
+            </span>
           </div>
           <div className="bn-toggle" role="group" aria-label="Ansicht wechseln">
             <button aria-pressed={modus === "besucher"} onClick={() => setModus("besucher")}>
-              <Search size={13} strokeWidth={2} /> Besuch
+              <MagnifyingGlass size={13} weight="regular" /> Besuch
             </button>
             <button aria-pressed={modus === "verwaltung"} onClick={() => setModus("verwaltung")}>
-              <Settings size={13} strokeWidth={2} /> Verwaltung
+              <Gear size={13} weight="regular" /> Verwaltung
             </button>
           </div>
         </div>
