@@ -62,6 +62,7 @@ src/
   speicher.js               Speicherzugriff, gekapselt
   main.jsx                  Einstiegspunkt
   index.css                 minimale Grundlagen
+  assets/grundrisse/        Lagepläne EG, 1. OG, 2. OG
 docs/
   testlauf-und-architektur.md   Testablauf, bekannte Grenzen, Zielarchitektur
 ```
@@ -99,7 +100,6 @@ einlesen. Dasselbe Format ist der geplante Übergabepunkt an den späteren Serve
 ## Nächste Schritte
 
 - CSV-Import, damit ein Probeexport aus dem Katalogsystem direkt eingelesen werden kann
-- Echte Grundrisse hinterlegen
 - Serverdienst mit Datenbank, getrennt nach öffentlicher Lese-App und interner Pflege-App
 - Anmeldung mit persönlichen Konten statt geteilter PIN
 
@@ -107,5 +107,7 @@ einlesen. Dasselbe Format ist der geplante Übergabepunkt an den späteren Serve
 
 ## Beispieldaten
 
-Etagenaufteilung und Bestand im Auslieferungszustand sind **erfunden** und dienen nur der
-Veranschaulichung. Vor jedem Test durch die tatsächlichen Gegebenheiten ersetzen.
+Die Lagepläne für EG, 1. OG und 2. OG (`src/assets/grundrisse/`) sind echte Grundrisse.
+Bestand, Bereichsnamen und die Position der Bereiche darauf sind weiterhin **erfunden** und
+dienen nur der Veranschaulichung. Vor jedem Test über **Verwaltung → Bereiche & Plan** durch
+die tatsächliche Aufteilung ersetzen.

@@ -22,6 +22,9 @@ import {
   SignOut,
 } from "@phosphor-icons/react";
 import { lesen, schreiben } from "./speicher";
+import grundrissEG from "./assets/grundrisse/eg.png";
+import grundriss1OG from "./assets/grundrisse/1og.png";
+import grundriss2OG from "./assets/grundrisse/2og.png";
 
 /* ------------------------------------------------------------------
    Bibliotheks-Navigator — Grundgerüst ohne eigenes Backend
@@ -38,10 +41,9 @@ const SEED = {
   einrichtung: "Stadtbibliothek",
   verwaltungPin: "2580",
   etagen: [
-    { id: "e0", nr: 0, kurz: "EG", name: "Erdgeschoss", zweck: "Foyer, Information, Rückgabe", bildUrl: "" },
-    { id: "e1", nr: 1, kurz: "1. OG", name: "1. Obergeschoss", zweck: "Kinder- und Jugendbibliothek", bildUrl: "" },
-    { id: "e2", nr: 2, kurz: "2. OG", name: "2. Obergeschoss", zweck: "Belletristik, Musik, Film", bildUrl: "" },
-    { id: "e3", nr: 3, kurz: "3. OG", name: "3. Obergeschoss", zweck: "Sachliteratur, Lernstudio", bildUrl: "" },
+    { id: "e0", nr: 0, kurz: "EG", name: "Erdgeschoss", zweck: "Foyer, Information, Rückgabe", bildUrl: grundrissEG },
+    { id: "e1", nr: 1, kurz: "1. OG", name: "1. Obergeschoss", zweck: "Kinder- und Jugendbibliothek", bildUrl: grundriss1OG },
+    { id: "e2", nr: 2, kurz: "2. OG", name: "2. Obergeschoss", zweck: "Belletristik, Musik, Film, Sachliteratur, Lernstudio", bildUrl: grundriss2OG },
   ],
   bereiche: [
     { id: "b01", name: "Information", etageId: "e0", x: 50, y: 22 },
@@ -50,13 +52,13 @@ const SEED = {
     { id: "b04", name: "Bilderbücher", etageId: "e1", x: 27, y: 30 },
     { id: "b05", name: "Kinderbuch A–Z", etageId: "e1", x: 58, y: 34 },
     { id: "b06", name: "Jugendbuch", etageId: "e1", x: 72, y: 68 },
-    { id: "b07", name: "Belletristik A–H", etageId: "e2", x: 24, y: 30 },
-    { id: "b08", name: "Belletristik I–R", etageId: "e2", x: 46, y: 28 },
-    { id: "b09", name: "Belletristik S–Z", etageId: "e2", x: 68, y: 32 },
-    { id: "b10", name: "Musik & Film", etageId: "e2", x: 70, y: 70 },
-    { id: "b11", name: "Sachbuch Technik", etageId: "e3", x: 30, y: 36 },
-    { id: "b12", name: "Sachbuch Geschichte", etageId: "e3", x: 56, y: 28 },
-    { id: "b13", name: "Lernstudio", etageId: "e3", x: 74, y: 68 },
+    { id: "b07", name: "Belletristik A–H", etageId: "e2", x: 18, y: 30 },
+    { id: "b08", name: "Belletristik I–R", etageId: "e2", x: 36, y: 28 },
+    { id: "b09", name: "Belletristik S–Z", etageId: "e2", x: 52, y: 32 },
+    { id: "b10", name: "Musik & Film", etageId: "e2", x: 62, y: 70 },
+    { id: "b11", name: "Sachbuch Technik", etageId: "e2", x: 72, y: 36 },
+    { id: "b12", name: "Sachbuch Geschichte", etageId: "e2", x: 84, y: 28 },
+    { id: "b13", name: "Lernstudio", etageId: "e2", x: 92, y: 60 },
   ],
   buecher: [
     { id: "m01", titel: "Die Vermessung der Welt", autor: "Daniel Kehlmann", signatur: "SL Kehl", medienart: "Buch", bereichId: "b08", regal: "14", reihe: "3", fach: "B" },
@@ -468,30 +470,30 @@ function Grundriss({ etage, bereiche, aktivBereichId, picking, onPick, kompakt }
       <svg
         ref={ref}
         className={"bn-plan" + (picking ? " is-picking" : "")}
-        viewBox="0 0 100 72"
+        viewBox="0 0 100 22"
         onClick={klick}
         role="img"
-        aria-label={`Schematischer Lageplan ${etage?.name || ""}`}
+        aria-label={`${etage?.bildUrl ? "Lageplan" : "Schematischer Lageplan"} ${etage?.name || ""}`}
       >
         {etage?.bildUrl ? (
-          <image href={etage.bildUrl} x="0" y="0" width="100" height="72" preserveAspectRatio="xMidYMid slice" />
+          <image href={etage.bildUrl} x="0" y="0" width="100" height="22" preserveAspectRatio="xMidYMid slice" />
         ) : (
           <>
-            <rect x="3" y="3" width="94" height="66" fill="var(--stone)" stroke="var(--line)" strokeWidth="0.7" />
+            <rect x="1" y="1" width="98" height="20" fill="var(--stone)" stroke="var(--line)" strokeWidth="0.4" />
             {/* Erschließungskern: Treppe und Aufzug */}
-            <rect x="44" y="52" width="12" height="14" fill="var(--line)" stroke="var(--concrete)" strokeWidth="0.5" />
-            <text x="50" y="60.5" textAnchor="middle" fontSize="3" fill="var(--concrete)" fontFamily="'IBM Plex Mono', monospace">
+            <rect x="44" y="15.5" width="12" height="5" fill="var(--line)" stroke="var(--concrete)" strokeWidth="0.3" />
+            <text x="50" y="18.6" textAnchor="middle" fontSize="2.2" fill="var(--concrete)" fontFamily="'IBM Plex Mono', monospace">
               TREPPE
             </text>
-            <path d="M3 45 H97" stroke="var(--line)" strokeWidth="0.4" />
-            <path d="M50 3 V45" stroke="var(--line)" strokeWidth="0.4" />
+            <path d="M1 13.5 H99" stroke="var(--line)" strokeWidth="0.3" />
+            <path d="M50 1 V13.5" stroke="var(--line)" strokeWidth="0.3" />
           </>
         )}
 
         {bereiche.map((b) => {
           const aktiv = b.id === aktivBereichId;
-          const x = (b.x / 100) * 94 + 3;
-          const y = (b.y / 100) * 66 + 3;
+          const x = (b.x / 100) * 98 + 1;
+          const y = (b.y / 100) * 20 + 1;
           return (
             <g key={b.id}>
               <circle
@@ -512,6 +514,10 @@ function Grundriss({ etage, bereiche, aktivBereichId, picking, onPick, kompakt }
                   fontWeight={aktiv ? 600 : 400}
                   fill={aktiv ? "var(--signal)" : "var(--ink2)"}
                   fontFamily="'Manrope', sans-serif"
+                  paintOrder="stroke"
+                  stroke="var(--paper)"
+                  strokeWidth="2.2"
+                  strokeLinejoin="round"
                 >
                   {b.name}
                 </text>
