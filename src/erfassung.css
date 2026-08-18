@@ -198,6 +198,58 @@ label.f > span {
 .act .btn { flex: 1; text-align: center; }
 .danger { color: var(--accent); }
 
+/* ---------- action bar while drawing ---------- */
+#drawbar {
+  position: absolute; left: 50%; transform: translateX(-50%);
+  bottom: .8rem; z-index: 5;
+  display: none; gap: .4rem;
+  background: var(--panel); border: 1px solid var(--line2);
+  padding: .4rem; box-shadow: var(--shadow);
+}
+#drawbar.on { display: flex; }
+#drawbar .btn { padding: .5rem .9rem; font-size: .82rem; }
+
+/* ---------- confirm sheet ---------- */
+#sheet {
+  position: fixed; inset: 0; z-index: 60;
+  background: rgba(24,19,14,.55);
+  display: none; align-items: center; justify-content: center; padding: 1rem;
+}
+#sheet.on { display: flex; }
+.sheetcard {
+  background: var(--panel); border: 1px solid var(--line);
+  width: 100%; max-width: 30rem; max-height: 86dvh;
+  display: flex; flex-direction: column; box-shadow: var(--shadow);
+}
+.sheetcard header {
+  padding: .8rem .9rem .6rem; border-bottom: 1px solid var(--line);
+}
+.sheetcard h2 { margin: 0; font-size: 1rem; font-weight: 700; letter-spacing: -.01em; }
+.sheetcard p.sub { margin: .2rem 0 0; font-size: .78rem; color: var(--ink2); line-height: 1.4; }
+.sheetbody { padding: .8rem .9rem; overflow-y: auto; flex: 1; }
+.pickgrid { display: grid; grid-template-columns: 1fr 1fr; gap: .35rem; }
+@media (max-width: 460px) { .pickgrid { grid-template-columns: 1fr; } }
+.pick {
+  border: 1px solid var(--line2); background: var(--sunken); color: var(--ink);
+  padding: .55rem .6rem; font-size: .82rem; text-align: left; font-weight: 600;
+  display: flex; align-items: center; justify-content: space-between; gap: .4rem;
+}
+.pick:hover { border-color: var(--accent); background: var(--accent-2); }
+.pick .used { font-size: .66rem; color: var(--faint); font-weight: 400; flex: none; }
+.pick[data-used="1"] { opacity: .55; }
+.sheetfoot {
+  padding: .7rem .9rem; border-top: 1px solid var(--line);
+  display: flex; gap: .4rem; justify-content: flex-end;
+}
+.divider {
+  display: flex; align-items: center; gap: .5rem; margin: .8rem 0 .5rem;
+  font-family: var(--mono); font-size: .58rem; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--faint);
+}
+.divider::before, .divider::after {
+  content: ""; flex: 1; height: 1px; background: var(--line);
+}
+
 /* mobile: sidebar becomes a bottom sheet */
 @media (max-width: 780px) {
   #shell {

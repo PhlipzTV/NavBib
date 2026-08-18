@@ -1,7 +1,7 @@
 /*
-  Grundriss-Erfassung — Regale, Treppen, Aufzüge, Theken und Zonen auf den
-  echten Grundrissen einzeichnen. Ergebnis ist ein JSON-Baum, der später den
-  Signaturbereich je Regal traegt (siehe README).
+  Grundriss-Erfassung — Bereiche, Regale, Treppen und Theken auf den echten
+  Grundrissen einzeichnen. Ergebnis ist ein JSON-Baum, der je Regal den
+  Signaturbereich traegt (siehe README).
 
   Bewusst ohne Framework: die Seite ist ein eigenstaendiges Werkzeug und soll
   auch dann noch laufen, wenn die React-App darunter umgebaut wird.
@@ -18,13 +18,30 @@ const PLANS = {
 };
 const FLOOR_IDS = ["eg", "1og", "2og"];
 
+/* form  = wie das Objekt gespeichert wird (Strecke oder Flaeche)
+   draw  = wie es gezeichnet wird (zwei Tipps, ein Zug, oder Ecke fuer Ecke) */
 const TYPES = {
-  regal:  { label: "Regal",  form: "linie",   color: "var(--t-regal)"  },
-  treppe: { label: "Treppe", form: "polygon", color: "var(--t-treppe)" },
-  aufzug: { label: "Aufzug", form: "polygon", color: "var(--t-aufzug)" },
-  theke:  { label: "Theke",  form: "linie",   color: "var(--t-theke)"  },
-  zone:   { label: "Zone",   form: "polygon", color: "var(--t-zone)"   },
+  bereich: { label: "Bereich", form: "flaeche", draw: "rechteck", color: "var(--t-zone)",   benennen: true },
+  regal:   { label: "Regal",   form: "linie",   draw: "linie",    color: "var(--t-regal)"  },
+  treppe:  { label: "Treppe",  form: "flaeche", draw: "rechteck", color: "var(--t-treppe)" },
+  aufzug:  { label: "Aufzug",  form: "flaeche", draw: "rechteck", color: "var(--t-aufzug)" },
+  theke:   { label: "Theke",   form: "linie",   draw: "linie",    color: "var(--t-theke)"  },
+  frei:    { label: "Fläche",  form: "flaeche", draw: "polygon",  color: "var(--t-zone)",   benennen: true },
 };
+
+/* Aus dem „Wo finde ich was?“-Wegweiser der Bibliothek. Die Liste dient nur als
+   Vorschlag beim Benennen — jeder Name laesst sich auf jeder Etage vergeben. */
+const KNOWN_AREAS = [
+  "Eingang", "Foyer", "Infotheke", "Ausleihe", "Rückgabe", "Schließfächer",
+  "Café Samocca", "Lesebereich Zeitschriften", "Bestseller", "Medien-Sortieranlage",
+  "Kinderbibliothek", "Kinderburg", "Michael-Ende-Kabinett", "Jugendbibliothek",
+  "Gaming-Room", "Non-Book-Bereich", "Graphothek", "110-Meter-Bücherregal",
+  "Romane", "Sachliteratur", "Lernstudios", "Leselounge",
+  "Leseterrasse Süd", "Leseterrasse Nord", "Beratung / Auskunft",
+  "Seminarraum", "Schulungsraum", "Stadtarchiv", "Kreismedienzentrum",
+  "Margarete-Hannsmann-Saal",
+];
+
 const STORE_KEY = "bibnav:erfassung:v1";
 
 const unitH = (f) => 100 * PLANS[f].h / PLANS[f].w;
@@ -38,6 +55,7 @@ let state = {
   view: {},          // floorId -> {x,y,k}
   draft: null,       // in-progress geometry
   calibrating: false,
+  calibTarget: null, // bekanntes Mass in Metern, falls vorgewaehlt
 };
 FLOOR_IDS.forEach((f) => {
   state.data[f] = { objekte: [], kalibrierung: null };
@@ -124,6 +142,14 @@ function toCanvas(evt) {
   return [(sx - v.x) / v.k, (sy - v.y) / v.k];
 }
 
+/** dasselbe, aber auf den Plan begrenzt — sonst landen Objekte im Nichts
+    neben dem Grundriss, weil die Zeichenflaeche groesser ist als der Plan */
+function toPlan(evt) {
+  const [x, y] = toCanvas(evt);
+  const uh = unitH(state.floor);
+  return [Math.max(0, Math.min(100, x)), Math.max(0, Math.min(uh, y))];
+}
+
 function fitView() {
   const r = svg.getBoundingClientRect();
   const uh = unitH(state.floor);
@@ -200,19 +226,31 @@ function render() {
   // draft preview
   gDraft.textContent = "";
   if (state.draft && state.draft.punkte.length) {
-    const pts = state.draft.punkte.concat(state.draft.hover ? [state.draft.hover] : []);
-    const col = state.calibrating ? "var(--ink)" : TYPES[state.draft.typ].color;
-    if (pts.length > 1) {
-      const closing = !state.calibrating && TYPES[state.draft.typ].form === "polygon" && pts.length > 2;
-      const d = pts.map((p, i) => (i ? "L" : "M") + p[0] + " " + p[1]).join(" ") + (closing ? " Z" : "");
+    const d0 = state.draft;
+    const col = state.calibrating ? "var(--ink)" : TYPES[d0.typ].color;
+    const dash = { "stroke-dasharray": `${strokeW*3} ${strokeW*2}` };
+
+    if (d0.rect && d0.hover) {
+      const pts = rectCorners(d0.punkte[0], d0.hover);
+      const d = pts.map((p, i) => (i ? "L" : "M") + p[0] + " " + p[1]).join(" ") + " Z";
       gDraft.append(el("path", {
-        d, fill: closing ? col : "none", "fill-opacity": .16,
-        stroke: col, "stroke-width": strokeW * 1.8, "stroke-dasharray": `${strokeW*3} ${strokeW*2}`,
+        d, fill: col, "fill-opacity": .16, stroke: col,
+        "stroke-width": strokeW * 1.8, ...dash,
       }));
+    } else {
+      const pts = d0.punkte.concat(d0.hover ? [d0.hover] : []);
+      if (pts.length > 1) {
+        const closing = !state.calibrating && d0.mode === "polygon" && pts.length > 2;
+        const d = pts.map((p, i) => (i ? "L" : "M") + p[0] + " " + p[1]).join(" ") + (closing ? " Z" : "");
+        gDraft.append(el("path", {
+          d, fill: closing ? col : "none", "fill-opacity": .16,
+          stroke: col, "stroke-width": strokeW * 1.8, ...dash,
+        }));
+      }
+      d0.punkte.forEach((p) => gDraft.append(el("circle", {
+        cx: p[0], cy: p[1], r: Math.max(0.6, 4 / v.k), fill: col,
+      })));
     }
-    state.draft.punkte.forEach((p) => gDraft.append(el("circle", {
-      cx: p[0], cy: p[1], r: Math.max(0.6, 4 / v.k), fill: col,
-    })));
   }
 
   svg.className.baseVal = state.tool === "select" ? "" : (state.tool === "pan" ? "pan" : "draw");
@@ -258,16 +296,29 @@ svg.addEventListener("pointerdown", (e) => {
     state.selectedId = null; render(); renderSide();
     return;
   }
-  // drawing tools
-  const p = toCanvas(e);
-  const typ = state.calibrating ? "regal" : state.tool;
-  if (!state.draft) state.draft = { typ, punkte: [], hover: null };
-  state.draft.punkte.push(p);
 
-  const form = state.calibrating ? "linie" : TYPES[typ].form;
-  if (form === "linie" && state.draft.punkte.length === 2) finishDraft();
-  render(); renderSide();
+  const p = toPlan(e);
+  const mode = state.calibrating ? "linie" : TYPES[state.tool].draw;
+  const typ = state.calibrating ? "regal" : state.tool;
+
+  // Rechteck: ein einziger Zug von Ecke zu Ecke
+  if (mode === "rechteck") {
+    state.draft = { typ, mode, punkte: [p], hover: p, rect: true };
+    svg.setPointerCapture(e.pointerId);
+    render(); syncDrawbar();
+    return;
+  }
+
+  if (!state.draft) state.draft = { typ, mode, punkte: [], hover: null };
+  state.draft.punkte.push(p);
+  if (mode === "linie" && state.draft.punkte.length === 2) finishDraft();
+  render(); renderSide(); syncDrawbar();
 });
+
+/** vier Ecken aus zwei gegenueberliegenden Punkten */
+function rectCorners(a, b) {
+  return [[a[0], a[1]], [b[0], a[1]], [b[0], b[1]], [a[0], b[1]]];
+}
 
 svg.addEventListener("pointermove", (e) => {
   if (pointers.has(e.pointerId)) pointers.set(e.pointerId, [e.clientX, e.clientY]);
@@ -298,7 +349,7 @@ svg.addEventListener("pointermove", (e) => {
   }
 
   if (drag && drag.obj) {
-    const p = toCanvas(e);
+    const p = drag.handleIndex != null ? toPlan(e) : toCanvas(e);
     const dx = p[0] - drag.last[0], dy = p[1] - drag.last[1];
     if (!drag.moved) { snapshot(); drag.moved = true; }
     if (drag.handleIndex != null) {
@@ -312,7 +363,7 @@ svg.addEventListener("pointermove", (e) => {
   }
 
   if (state.draft) {
-    state.draft.hover = toCanvas(e);
+    state.draft.hover = toPlan(e);
     render();
   }
 });
@@ -321,6 +372,20 @@ function endPointer(e) {
   pointers.delete(e.pointerId);
   if (pointers.size < 2) pinch = null;
   if (drag) { if (drag.moved) save(); drag = null; }
+
+  // Rechteck ist mit dem Loslassen fertig — sofern es nicht nur ein Tipp war
+  if (state.draft && state.draft.rect) {
+    const a = state.draft.punkte[0], b = state.draft.hover;
+    if (b && Math.abs(b[0] - a[0]) > 0.6 && Math.abs(b[1] - a[1]) > 0.6) {
+      state.draft.punkte = rectCorners(a, b);
+      state.draft.hover = null;
+      state.draft.rect = false;
+      finishDraft();
+    } else {
+      state.draft = null;
+      render(); syncDrawbar();
+    }
+  }
 }
 svg.addEventListener("pointerup", endPointer);
 svg.addEventListener("pointercancel", endPointer);
@@ -345,24 +410,12 @@ function finishDraft() {
   if (!d) return;
   const form = state.calibrating ? "linie" : TYPES[d.typ].form;
   const min = form === "linie" ? 2 : 3;
-  if (d.punkte.length < min) { state.draft = null; render(); renderSide(); return; }
+  if (d.punkte.length < min) { state.draft = null; render(); renderSide(); syncDrawbar(); return; }
 
   if (state.calibrating) {
     const units = lineLen(d.punkte);
     state.draft = null;
-    const answer = prompt(
-      `Wie lang ist diese Strecke in echt?\nAngabe in Metern, z. B. 45.0`,
-      cur().kalibrierung ? String(cur().kalibrierung.meter) : ""
-    );
-    const meter = parseFloat((answer || "").replace(",", "."));
-    if (isFinite(meter) && meter > 0) {
-      snapshot();
-      cur().kalibrierung = { einheiten: units, meter };
-      save();
-    }
-    state.calibrating = false;
-    setTool("select");
-    render(); renderSide();
+    applyCalibration(units);
     return;
   }
 
@@ -377,9 +430,183 @@ function finishDraft() {
   cur().objekte.push(obj);
   state.selectedId = obj.id;
   state.draft = null;
-  save(); render(); renderSide();
+  save(); render(); renderSide(); syncDrawbar();
+
+  if (TYPES[d.typ].benennen) askAreaName(obj, true);
 }
+
+/** Sichtbare Fertig/Abbrechen-Leiste — ohne die kommt man per Touch aus
+    einer offenen Flaeche nicht heraus. */
+function syncDrawbar() {
+  const bar = document.getElementById("drawbar");
+  const open = !!state.draft && !state.draft.rect && state.draft.mode === "polygon";
+  bar.classList.toggle("on", open);
+  document.getElementById("drawDone").disabled = open && state.draft.punkte.length < 3;
+}
+document.getElementById("drawDone").addEventListener("click", () => finishDraft());
+document.getElementById("drawCancel").addEventListener("click", () => {
+  state.draft = null; render(); renderSide(); syncDrawbar();
+});
 const round = (n) => Math.round(n * 100) / 100;
+
+/* ---------------- confirm sheet ---------------- */
+const sheet = document.getElementById("sheet");
+function openSheet({ title, sub, build, foot }) {
+  document.getElementById("sheetTitle").textContent = title;
+  document.getElementById("sheetSub").textContent = sub || "";
+  const body = document.getElementById("sheetBody");
+  const footEl = document.getElementById("sheetFoot");
+  body.textContent = ""; footEl.textContent = "";
+  build(body);
+  (foot || []).forEach((b) => footEl.append(b));
+  sheet.classList.add("on");
+}
+function closeSheet() { sheet.classList.remove("on"); }
+sheet.addEventListener("pointerdown", (e) => { if (e.target === sheet) closeSheet(); });
+
+function mkBtn(label, cls, fn) {
+  const b = document.createElement("button");
+  b.className = "btn" + (cls ? " " + cls : "");
+  b.textContent = label;
+  b.addEventListener("click", fn);
+  return b;
+}
+
+/** Nach dem Zeichnen einer Flaeche: „Ja, das ist der Bereich X.“ */
+function askAreaName(obj, isNew) {
+  const usedNames = new Set(
+    FLOOR_IDS.flatMap((f) => state.data[f].objekte.filter((o) => o.id !== obj.id).map((o) => o.name))
+  );
+  let chosen = null;
+
+  const commit = (name) => {
+    if (name && name.trim()) { obj.name = name.trim(); save(); }
+    closeSheet(); render(); renderSide();
+  };
+
+  openSheet({
+    title: "Welcher Bereich ist das?",
+    sub: "Antippen bestätigt die Zuordnung. Die Liste stammt aus dem Wegweiser der Bibliothek — die Fläche lässt sich danach jederzeit verschieben oder umbenennen.",
+    build: (body) => {
+      const grid = document.createElement("div");
+      grid.className = "pickgrid";
+      KNOWN_AREAS.forEach((n) => {
+        const b = document.createElement("button");
+        b.className = "pick";
+        if (usedNames.has(n)) b.dataset.used = "1";
+        const s = document.createElement("span"); s.textContent = n;
+        b.append(s);
+        if (usedNames.has(n)) {
+          const u = document.createElement("span");
+          u.className = "used"; u.textContent = "schon vergeben";
+          b.append(u);
+        }
+        b.addEventListener("click", () => commit(n));
+        grid.append(b);
+      });
+      body.append(grid);
+
+      const div = document.createElement("div");
+      div.className = "divider"; div.textContent = "oder eigener Name";
+      body.append(div);
+
+      const inp = document.createElement("input");
+      inp.className = "inp";
+      inp.placeholder = "z. B. Sitzecke am Fenster";
+      inp.addEventListener("keydown", (e) => { if (e.key === "Enter") commit(inp.value); });
+      inp.addEventListener("input", () => { chosen = inp.value; });
+      body.append(inp);
+    },
+    foot: [
+      isNew
+        ? mkBtn("Verwerfen", "", () => {
+            cur().objekte = cur().objekte.filter((x) => x.id !== obj.id);
+            state.selectedId = null;
+            save(); closeSheet(); render(); renderSide();
+          })
+        : mkBtn("Abbrechen", "", closeSheet),
+      mkBtn("Übernehmen", "primary", () => commit(chosen || obj.name)),
+    ],
+  });
+}
+
+/* ---------------- calibration ---------------- */
+function applyCalibration(units) {
+  const meter = state.calibTarget;
+  const finish = (m) => {
+    if (isFinite(m) && m > 0) {
+      snapshot();
+      cur().kalibrierung = { einheiten: units, meter: m };
+      save();
+    }
+    state.calibrating = false; state.calibTarget = null;
+    setTool("select"); render(); renderSide();
+  };
+  if (meter) { finish(meter); return; }
+
+  let typed = "";
+  openSheet({
+    title: "Wie lang ist diese Strecke?",
+    sub: "Angabe in Metern. Wenn du keinen Wert kennst, einfach abbrechen — ohne Maßstab funktioniert alles weiter, nur die Längen stehen dann in relativen Einheiten.",
+    build: (body) => {
+      const inp = document.createElement("input");
+      inp.className = "inp mono";
+      inp.inputMode = "decimal";
+      inp.placeholder = "z. B. 12.5";
+      inp.addEventListener("input", () => { typed = inp.value; });
+      inp.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") { closeSheet(); finish(parseFloat(typed.replace(",", "."))); }
+      });
+      body.append(inp);
+      setTimeout(() => inp.focus(), 30);
+    },
+    foot: [
+      mkBtn("Abbrechen", "", () => { closeSheet(); finish(NaN); }),
+      mkBtn("Übernehmen", "primary", () => { closeSheet(); finish(parseFloat(typed.replace(",", "."))); }),
+    ],
+  });
+}
+
+/** Maßstab-Einstieg: erst fragen, WAS gemessen wird, dann zeichnen lassen. */
+function startCalibration() {
+  const begin = (meter) => {
+    state.calibTarget = meter;
+    state.calibrating = true;
+    state.tool = "calib";
+    state.draft = null;
+    [...document.querySelectorAll("#toolGroup button")].forEach((b) => b.setAttribute("aria-pressed", "false"));
+    closeSheet(); render(); renderHint(); syncDrawbar();
+  };
+  openSheet({
+    title: "Maßstab setzen",
+    sub: "Optional. Ohne Maßstab läuft alles weiter, es fehlen nur die Meterangaben. Wähle etwas, dessen Maß du kennst, und zeichne es danach im Plan ein.",
+    build: (body) => {
+      const grid = document.createElement("div");
+      grid.className = "pickgrid";
+      [
+        ["Zimmertür", 0.885, "Standardbreite 88,5 cm"],
+        ["Eingangstür", 1.01, "Standardbreite 101 cm"],
+        ["Treppenstufe", 0.28, "Auftritt 28 cm"],
+        ["Eigenes Maß", null, "Länge selbst eingeben"],
+      ].forEach(([label, m, note]) => {
+        const b = document.createElement("button");
+        b.className = "pick";
+        const s = document.createElement("span"); s.textContent = label;
+        const u = document.createElement("span"); u.className = "used"; u.textContent = note;
+        b.append(s, u);
+        b.addEventListener("click", () => begin(m));
+        grid.append(b);
+      });
+      body.append(grid);
+
+      const p = document.createElement("p");
+      p.style.cssText = "font-size:.76rem;color:var(--ink2);line-height:1.45;margin:.9rem 0 0";
+      p.textContent = "Tipp: In Google Maps lässt sich mit „Entfernung messen“ die Länge des Gebäudes abgreifen — das ist die genaueste Angabe, die ohne Zollstock zu bekommen ist.";
+      body.append(p);
+    },
+    foot: [mkBtn("Abbrechen", "", closeSheet)],
+  });
+}
 
 /* ---------------- toolbar ---------------- */
 function setTool(t) {
@@ -388,7 +615,7 @@ function setTool(t) {
   state.draft = null;
   [...document.querySelectorAll("#toolGroup button")].forEach((b) =>
     b.setAttribute("aria-pressed", String(b.dataset.tool === t)));
-  render(); renderSide(); renderHint();
+  render(); renderSide(); renderHint(); syncDrawbar();
 }
 
 function buildToolbar() {
@@ -412,11 +639,12 @@ function buildToolbar() {
   const tools = [
     ["select", "Auswahl", null],
     ["pan", "Verschieben", null],
+    ["bereich", "Bereich", "var(--t-zone)"],
     ["regal", "Regal", "var(--t-regal)"],
     ["treppe", "Treppe", "var(--t-treppe)"],
     ["aufzug", "Aufzug", "var(--t-aufzug)"],
     ["theke", "Theke", "var(--t-theke)"],
-    ["zone", "Zone", "var(--t-zone)"],
+    ["frei", "Fläche frei", "var(--t-zone)"],
   ];
   tools.forEach(([t, label, col]) => {
     const b = document.createElement("button");
@@ -439,19 +667,20 @@ function renderHint() {
     h.textContent = "Maßstab: eine Strecke ziehen, deren echte Länge du kennst (z. B. die lange Außenwand). Danach die Länge in Metern eingeben.";
     return;
   }
-  const nothingYet = FLOOR_IDS.every((f) => !state.data[f].objekte.length) && !cur().kalibrierung;
+  const nothingYet = FLOOR_IDS.every((f) => !state.data[f].objekte.length);
   if (state.tool === "select" && nothingYet) {
-    h.textContent = "Zuerst „Maßstab“ antippen und eine Strecke mit bekannter Länge einmessen — danach stimmen alle Regallängen in Metern. Dann mit „Regal“ loslegen.";
+    h.textContent = "Mit „Bereich“ anfangen: ein Rechteck über die Fläche ziehen, danach den Namen aus der Liste antippen. Maßstab ist optional und geht jederzeit später.";
     return;
   }
   const map = {
-    select: "Objekt antippen zum Auswählen. Ziehen verschiebt es, die Punkte an den Enden ziehen ändert die Form.",
+    select: "Objekt antippen zum Auswählen. Ziehen verschiebt es, die Punkte an den Ecken ziehen ändert die Form.",
     pan: "Ziehen verschiebt den Plan. Zwei Finger oder Mausrad zoomen — das geht in jedem Werkzeug.",
+    bereich: "Bereich: ein Rechteck über die Fläche ziehen. Danach kannst du den Namen aus der Liste bestätigen.",
     regal: "Regal: Anfang antippen, Ende antippen. Fertig.",
     theke: "Theke: Anfang antippen, Ende antippen.",
-    treppe: "Treppe: Ecken nacheinander antippen, Doppeltipp schließt die Fläche.",
-    aufzug: "Aufzug: Ecken nacheinander antippen, Doppeltipp schließt die Fläche.",
-    zone: "Zone: Ecken der Fläche antippen (z. B. Kinderbibliothek), Doppeltipp schließt sie.",
+    treppe: "Treppe: ein Rechteck über die Treppe ziehen.",
+    aufzug: "Aufzug: ein Rechteck über den Aufzug ziehen.",
+    frei: "Freie Fläche: Ecken nacheinander antippen, dann unten auf „Fertig“.",
   };
   h.textContent = map[state.tool] || "";
 }
@@ -546,6 +775,11 @@ function renderProps() {
     arr.className = "btn"; arr.textContent = "Reihe…";
     arr.addEventListener("click", () => makeRow(o));
     acts.append(arr);
+  } else {
+    const ren = document.createElement("button");
+    ren.className = "btn"; ren.textContent = "Benennen…";
+    ren.addEventListener("click", () => askAreaName(o));
+    acts.append(ren);
   }
   const dup = document.createElement("button");
   dup.className = "btn"; dup.textContent = "Kopie";
@@ -661,11 +895,8 @@ function buildExport() {
 
 document.getElementById("exportBtn").addEventListener("click", async () => {
   const json = JSON.stringify(buildExport(), null, 2);
-  const filename = `erfassung-${new Date().toISOString().slice(0, 10)}.json`;
-
-  // In der Artefakt-Vorschau laeuft der Download ueber die Host-Bruecke,
-  // im normalen Browser ueber einen Blob. Klappt beides nicht: zum Kopieren anzeigen.
   const downloads = await window.claude?.use?.("downloads");
+  const filename = `erfassung-${new Date().toISOString().slice(0,10)}.json`;
   if (downloads) {
     try {
       await downloads.save({ filename, data: json });
@@ -674,12 +905,11 @@ document.getElementById("exportBtn").addEventListener("click", async () => {
       if (err && err.code === "declined") return;
     }
   } else {
+    // Ausserhalb der Artefakt-Vorschau geht der normale Blob-Download
     try {
       const url = URL.createObjectURL(new Blob([json], { type: "application/json" }));
       const a = document.createElement("a");
-      a.href = url;
-      a.download = filename;
-      a.click();
+      a.href = url; a.download = filename; a.click();
       URL.revokeObjectURL(url);
       return;
     } catch {}
@@ -748,20 +978,17 @@ document.getElementById("fileInput").addEventListener("change", (e) => {
   e.target.value = "";
 });
 
-document.getElementById("calibBtn").addEventListener("click", () => {
-  state.calibrating = true;
-  state.tool = "calib";
-  state.draft = null;
-  [...document.querySelectorAll("#toolGroup button")].forEach((b) => b.setAttribute("aria-pressed", "false"));
-  render(); renderHint();
-});
+document.getElementById("calibBtn").addEventListener("click", startCalibration);
 
 document.getElementById("undoBtn").addEventListener("click", undo);
 
 window.addEventListener("keydown", (e) => {
   if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") return;
   if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z") { e.preventDefault(); undo(); }
-  else if (e.key === "Escape") { state.draft = null; state.calibrating = false; setTool("select"); }
+  else if (e.key === "Escape") {
+    if (sheet.classList.contains("on")) { closeSheet(); return; }
+    state.draft = null; state.calibrating = false; state.calibTarget = null; setTool("select");
+  }
   else if (e.key === "Enter" && state.draft) finishDraft();
   else if ((e.key === "Delete" || e.key === "Backspace") && selected()) {
     snapshot();
@@ -777,5 +1004,5 @@ load();
 buildToolbar();
 requestAnimationFrame(() => {
   FLOOR_IDS.forEach((f) => { const keep = state.floor; state.floor = f; fitView(); state.floor = keep; });
-  render(); renderSide(); renderHint(); syncUndo();
+  render(); renderSide(); renderHint(); syncUndo(); syncDrawbar();
 });

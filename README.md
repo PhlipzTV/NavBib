@@ -103,16 +103,27 @@ einlesen. Dasselbe Format ist der geplante Übergabepunkt an den späteren Serve
 
 ## Grundriss-Erfassung
 
-`npm run dev`, dann `/erfassung.html` öffnen. Damit werden **Regale, Treppen, Aufzüge,
-Theken und Zonen** direkt auf den echten Grundrissen eingezeichnet:
+`npm run dev`, dann `/erfassung.html` öffnen. Damit werden **Bereiche, Regale, Treppen,
+Aufzüge und Theken** direkt auf den echten Grundrissen eingezeichnet.
 
-- **Maßstab zuerst.** Eine Strecke mit bekannter Länge einmessen (z. B. die lange
-  Außenwand). Danach stehen alle Regallängen in Metern.
-- **Regal/Theke** sind Strecken (Anfang, Ende), **Treppe/Aufzug/Zone** sind Flächen.
+- **Bereich** ist der Einstieg: ein Rechteck über die Fläche ziehen, danach den Namen
+  aus einer Liste bestätigen. Die Liste stammt aus dem „Wo finde ich was?“-Wegweiser der
+  Bibliothek, ein eigener Name geht auch. Ein Zug, ein Tipp — mehr nicht.
+- **Regal/Theke** sind Strecken (Anfang antippen, Ende antippen), **Treppe/Aufzug**
+  ebenfalls Rechtecke. **Fläche frei** zeichnet Ecke für Ecke, für unregelmäßige Zuschnitte;
+  abgeschlossen wird über den sichtbaren **Fertig**-Knopf.
 - **Reihe…** vervielfältigt ein Regal senkrecht zu sich selbst — acht parallele Regale
   mit 1,2 m Abstand sind zwei Eingaben statt acht Zeichenvorgängen.
+- **Maßstab ist optional.** Ohne ihn läuft alles weiter, Längen stehen dann in relativen
+  Einheiten. Wer ihn setzen will, wählt etwas mit bekanntem Maß (Zimmertür 88,5 cm,
+  Eingangstür 101 cm, Treppenstufe 28 cm) und zeichnet es im Plan nach; danach stehen alle
+  Längen in Metern. Genauer wird es, wenn man die Gebäudelänge in Google Maps über
+  „Entfernung messen“ abgreift.
 - Erfasst wird laufend im Browserspeicher; **JSON sichern** gibt den Stand heraus,
   **Laden** liest ihn wieder ein.
+
+Alles funktioniert per Maus und per Touch (Ziehen zeichnet, zwei Finger zoomen) — die
+Erfassung ist als Tablet-Arbeit vor Ort gedacht.
 
 Jedes Regal trägt neben der Geometrie zwei Felder: **Signatur von / bis**. Das ist der
 Kern des geplanten Modells (siehe unten).
