@@ -57,11 +57,15 @@ angepasst werden — sonst laden die Dateien nicht.
 ## Aufbau
 
 ```
+index.html                   Besuch und Verwaltung
+erfassung.html               Werkzeug zum Einzeichnen (siehe unten)
 src/
   BibliotheksNavigator.jsx   gesamte Anwendung, beide Oberflächen
   speicher.js               Speicherzugriff, gekapselt
   main.jsx                  Einstiegspunkt
   index.css                 minimale Grundlagen
+  erfassung.js              Grundriss-Erfassung, ohne Framework
+  erfassung.css             Gestaltung dazu
   assets/grundrisse/        Lagepläne EG, 1. OG, 2. OG
 docs/
   testlauf-und-architektur.md   Testablauf, bekannte Grenzen, Zielarchitektur
@@ -97,9 +101,49 @@ einlesen. Dasselbe Format ist der geplante Übergabepunkt an den späteren Serve
 
 ---
 
+## Grundriss-Erfassung
+
+`npm run dev`, dann `/erfassung.html` öffnen. Damit werden **Regale, Treppen, Aufzüge,
+Theken und Zonen** direkt auf den echten Grundrissen eingezeichnet:
+
+- **Maßstab zuerst.** Eine Strecke mit bekannter Länge einmessen (z. B. die lange
+  Außenwand). Danach stehen alle Regallängen in Metern.
+- **Regal/Theke** sind Strecken (Anfang, Ende), **Treppe/Aufzug/Zone** sind Flächen.
+- **Reihe…** vervielfältigt ein Regal senkrecht zu sich selbst — acht parallele Regale
+  mit 1,2 m Abstand sind zwei Eingaben statt acht Zeichenvorgängen.
+- Erfasst wird laufend im Browserspeicher; **JSON sichern** gibt den Stand heraus,
+  **Laden** liest ihn wieder ein.
+
+Jedes Regal trägt neben der Geometrie zwei Felder: **Signatur von / bis**. Das ist der
+Kern des geplanten Modells (siehe unten).
+
+---
+
+## Wohin das führt: Signaturbereiche statt Einzelstandorte
+
+Im aktuellen Datenmodell hängt der Standort am Buch. Das ist für 14 Beispielmedien
+handhabbar und für einen echten Bestand unmöglich zu pflegen.
+
+Der Umbau dreht das um:
+
+- Ein **Regal** trägt einen Signaturbereich, z. B. `SL Kaa` bis `SL Kul`.
+- Ein **Buch** trägt nur seine Signatur — die kommt ohnehin aus dem Katalog.
+- Der Standort wird **berechnet**, nicht gespeichert.
+
+Damit genügt ein Katalog-Import, Neuzugänge sind automatisch verortet, und eine
+Umstellung im Regal ist eine geänderte Bereichsgrenze statt hunderter Datensätze.
+Lücken und Überschneidungen lassen sich maschinell prüfen.
+
+Zwei Dinge sind dafür noch zu bauen: ein Signatur-Vergleicher, der `Ges 100` korrekt
+hinter `Ges 99` einsortiert, und der Katalog-Import.
+
+---
+
 ## Nächste Schritte
 
+- Signatur-Vergleicher und Standortberechnung über Signaturbereiche
 - CSV-Import, damit ein Probeexport aus dem Katalogsystem direkt eingelesen werden kann
+- Erfassung und App zusammenführen: erfasste Regale als Standortquelle nutzen
 - Serverdienst mit Datenbank, getrennt nach öffentlicher Lese-App und interner Pflege-App
 - Anmeldung mit persönlichen Konten statt geteilter PIN
 
