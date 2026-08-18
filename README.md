@@ -57,11 +57,15 @@ angepasst werden — sonst laden die Dateien nicht.
 ## Aufbau
 
 ```
+index.html                   Besuch und Verwaltung
+erfassung.html               Werkzeug zum Einzeichnen (siehe unten)
 src/
   BibliotheksNavigator.jsx   gesamte Anwendung, beide Oberflächen
   speicher.js               Speicherzugriff, gekapselt
   main.jsx                  Einstiegspunkt
   index.css                 minimale Grundlagen
+  erfassung.js              Grundriss-Erfassung, ohne Framework
+  erfassung.css             Gestaltung dazu
   assets/grundrisse/        Lagepläne EG, 1. OG, 2. OG
 docs/
   testlauf-und-architektur.md   Testablauf, bekannte Grenzen, Zielarchitektur
@@ -97,9 +101,69 @@ einlesen. Dasselbe Format ist der geplante Übergabepunkt an den späteren Serve
 
 ---
 
+## Grundriss-Erfassung
+
+`npm run dev`, dann `/erfassung.html` öffnen. Damit werden **Bereiche, Regale, Treppen,
+Aufzüge und Theken** direkt auf den echten Grundrissen eingezeichnet.
+
+Die Bibliothek ist ein **Großraum**: außer Aufzug und Treppenhaus gibt es kaum
+umschlossene Räume. „Kinderbibliothek“ ist ein Stück offener Halle, keine Kante im Plan.
+Dafür gibt es zwei Wege, und der zweite ist der ehrlichere:
+
+- **Bereich zeichnen:** ein Rechteck über die Fläche ziehen, danach den Namen aus einer
+  Liste bestätigen. Die Liste stammt aus dem „Wo finde ich was?“-Wegweiser der Bibliothek,
+  ein eigener Name geht auch. Die Grenze ist dann eine Festlegung, keine bauliche Tatsache —
+  das ist für einen Wegweiser völlig ausreichend.
+- **Bereich aus Regalen bilden:** erst die Regale einzeichnen (die sind im Plan sichtbar),
+  dann **Sammeln** einschalten, die zusammengehörigen Regale antippen und **Bereich
+  bilden…** wählen. Die Fläche wird um die Regale herum gelegt, und jedes Regal merkt sich
+  seine Zugehörigkeit. So muss keine Grenze erfunden werden.
+- **Regal/Theke** sind Strecken (Anfang antippen, Ende antippen), **Treppe/Aufzug**
+  ebenfalls Rechtecke. **Fläche frei** zeichnet Ecke für Ecke, für unregelmäßige Zuschnitte;
+  abgeschlossen wird über den sichtbaren **Fertig**-Knopf.
+- **Reihe…** vervielfältigt ein Regal senkrecht zu sich selbst — acht parallele Regale
+  mit 1,2 m Abstand sind zwei Eingaben statt acht Zeichenvorgängen.
+- **Maßstab ist optional.** Ohne ihn läuft alles weiter, Längen stehen dann in relativen
+  Einheiten. Wer ihn setzen will, wählt etwas mit bekanntem Maß (Zimmertür 88,5 cm,
+  Eingangstür 101 cm, Treppenstufe 28 cm) und zeichnet es im Plan nach; danach stehen alle
+  Längen in Metern. Genauer wird es, wenn man die Gebäudelänge in Google Maps über
+  „Entfernung messen“ abgreift.
+- Erfasst wird laufend im Browserspeicher; **JSON sichern** gibt den Stand heraus,
+  **Laden** liest ihn wieder ein.
+
+Alles funktioniert per Maus und per Touch (Ziehen zeichnet, zwei Finger zoomen) — die
+Erfassung ist als Tablet-Arbeit vor Ort gedacht.
+
+Jedes Regal trägt neben der Geometrie zwei Felder: **Signatur von / bis**. Das ist der
+Kern des geplanten Modells (siehe unten).
+
+---
+
+## Wohin das führt: Signaturbereiche statt Einzelstandorte
+
+Im aktuellen Datenmodell hängt der Standort am Buch. Das ist für 14 Beispielmedien
+handhabbar und für einen echten Bestand unmöglich zu pflegen.
+
+Der Umbau dreht das um:
+
+- Ein **Regal** trägt einen Signaturbereich, z. B. `SL Kaa` bis `SL Kul`.
+- Ein **Buch** trägt nur seine Signatur — die kommt ohnehin aus dem Katalog.
+- Der Standort wird **berechnet**, nicht gespeichert.
+
+Damit genügt ein Katalog-Import, Neuzugänge sind automatisch verortet, und eine
+Umstellung im Regal ist eine geänderte Bereichsgrenze statt hunderter Datensätze.
+Lücken und Überschneidungen lassen sich maschinell prüfen.
+
+Zwei Dinge sind dafür noch zu bauen: ein Signatur-Vergleicher, der `Ges 100` korrekt
+hinter `Ges 99` einsortiert, und der Katalog-Import.
+
+---
+
 ## Nächste Schritte
 
+- Signatur-Vergleicher und Standortberechnung über Signaturbereiche
 - CSV-Import, damit ein Probeexport aus dem Katalogsystem direkt eingelesen werden kann
+- Erfassung und App zusammenführen: erfasste Regale als Standortquelle nutzen
 - Serverdienst mit Datenbank, getrennt nach öffentlicher Lese-App und interner Pflege-App
 - Anmeldung mit persönlichen Konten statt geteilter PIN
 

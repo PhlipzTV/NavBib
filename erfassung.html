@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#8C7C5E" />
+    <meta name="description" content="Regale, Treppen und Zonen auf den Grundrissen erfassen." />
+    <title>Grundriss-Erfassung</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  </head>
+  <body>
+<div id="shell">
+  <div id="bar">
+    <div class="brand"><b>Grundriss-Erfassung</b><span>Stadtbibliothek</span></div>
+
+    <div class="group" id="floorGroup" role="group" aria-label="Etage"></div>
+
+    <div class="group" id="toolGroup" role="group" aria-label="Werkzeug"></div>
+
+    <button class="btn" id="multiBtn" aria-pressed="false">Sammeln</button>
+
+    <div class="spacer"></div>
+    <button class="btn" id="undoBtn" title="Rückgängig (Strg+Z)">Rückgängig</button>
+    <button class="btn" id="calibBtn">Maßstab</button>
+    <button class="btn" id="importBtn">Laden</button>
+    <button class="btn primary" id="exportBtn">JSON sichern</button>
+    <input type="file" id="fileInput" accept="application/json" hidden />
+  </div>
+
+  <div id="canvasWrap">
+    <svg id="svg"></svg>
+    <div id="hint"></div>
+    <div id="scaleBadge"></div>
+    <div id="drawbar">
+      <button class="btn primary" id="drawDone">Fertig</button>
+      <button class="btn" id="drawCancel">Abbrechen</button>
+    </div>
+  </div>
+
+  <div id="sheet" role="dialog" aria-modal="true">
+    <div class="sheetcard">
+      <header>
+        <h2 id="sheetTitle"></h2>
+        <p class="sub" id="sheetSub"></p>
+      </header>
+      <div class="sheetbody" id="sheetBody"></div>
+      <div class="sheetfoot" id="sheetFoot"></div>
+    </div>
+  </div>
+
+  <div id="side">
+    <div class="sec" id="multiSec" hidden>
+      <h2>Sammlung</h2>
+      <p id="multiCount" style="margin:0 0 .5rem;font-size:.82rem"></p>
+      <div class="act">
+        <button class="btn primary" id="makeAreaBtn">Bereich bilden…</button>
+        <button class="btn" id="clearPickBtn">Leeren</button>
+      </div>
+    </div>
+
+    <div class="sec" id="propSec">
+      <h2>Auswahl</h2>
+      <div id="props"><p class="empty" style="padding:.3rem 0">Nichts ausgewählt.</p></div>
+    </div>
+    <div id="objList"></div>
+  </div>
+</div>
+    <script type="module" src="/src/erfassung.js"></script>
+  </body>
+</html>
