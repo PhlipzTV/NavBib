@@ -62,12 +62,17 @@ src/
   speicher.js               Speicherzugriff, gekapselt
   main.jsx                  Einstiegspunkt
   index.css                 minimale Grundlagen
+  assets/grundrisse/        Lagepläne EG, 1. OG, 2. OG
 docs/
   testlauf-und-architektur.md   Testablauf, bekannte Grenzen, Zielarchitektur
 ```
 
 Die Gestaltung steckt als CSS-Block in `BibliotheksNavigator.jsx`. Kein Tailwind, keine
-weiteren Abhängigkeiten außer React und `lucide-react` für die Symbole.
+weiteren Abhängigkeiten außer React und `@phosphor-icons/react` für die Symbole.
+
+Die Formsprache lehnt sich an den öffentlichen Auftritt von Stadtbibliotheken an: warmer
+Sandstein-/Taupe-Ton als Leitfarbe, scharfe Kanten statt Rundungen, zurückhaltende
+Bewegung. Terrakotta markiert aktive Standorte und Interaktion.
 
 ---
 
@@ -95,7 +100,6 @@ einlesen. Dasselbe Format ist der geplante Übergabepunkt an den späteren Serve
 ## Nächste Schritte
 
 - CSV-Import, damit ein Probeexport aus dem Katalogsystem direkt eingelesen werden kann
-- Echte Grundrisse hinterlegen
 - Serverdienst mit Datenbank, getrennt nach öffentlicher Lese-App und interner Pflege-App
 - Anmeldung mit persönlichen Konten statt geteilter PIN
 
@@ -103,5 +107,9 @@ einlesen. Dasselbe Format ist der geplante Übergabepunkt an den späteren Serve
 
 ## Beispieldaten
 
-Etagenaufteilung und Bestand im Auslieferungszustand sind **erfunden** und dienen nur der
-Veranschaulichung. Vor jedem Test durch die tatsächlichen Gegebenheiten ersetzen.
+Die Lagepläne für EG, 1. OG und 2. OG (`src/assets/grundrisse/`) sind echte Grundrisse, die
+Bereichsnamen (Infotheke, Kinderbibliothek, Michael-Ende-Kabinett, Gaming-Room, Romane,
+Graphothek, Lernstudio, …) stammen aus dem echten „Wo finde ich was?“-Wegweiser der
+Bibliothek. Die genaue **Position** der Bereiche auf dem Plan sowie der Bestand selbst sind
+weiterhin **erfunden** und dienen nur der Veranschaulichung. Vor jedem Test über
+**Verwaltung → Bereiche & Plan** durch die tatsächliche Positionierung ersetzen.
