@@ -19,6 +19,8 @@
 
     <div class="group" id="toolGroup" role="group" aria-label="Werkzeug"></div>
 
+    <button class="btn" id="multiBtn" aria-pressed="false">Sammeln</button>
+
     <div class="spacer"></div>
     <button class="btn" id="undoBtn" title="Rückgängig (Strg+Z)">Rückgängig</button>
     <button class="btn" id="calibBtn">Maßstab</button>
@@ -49,6 +51,15 @@
   </div>
 
   <div id="side">
+    <div class="sec" id="multiSec" hidden>
+      <h2>Sammlung</h2>
+      <p id="multiCount" style="margin:0 0 .5rem;font-size:.82rem"></p>
+      <div class="act">
+        <button class="btn primary" id="makeAreaBtn">Bereich bilden…</button>
+        <button class="btn" id="clearPickBtn">Leeren</button>
+      </div>
+    </div>
+
     <div class="sec" id="propSec">
       <h2>Auswahl</h2>
       <div id="props"><p class="empty" style="padding:.3rem 0">Nichts ausgewählt.</p></div>

@@ -106,9 +106,18 @@ einlesen. Dasselbe Format ist der geplante Übergabepunkt an den späteren Serve
 `npm run dev`, dann `/erfassung.html` öffnen. Damit werden **Bereiche, Regale, Treppen,
 Aufzüge und Theken** direkt auf den echten Grundrissen eingezeichnet.
 
-- **Bereich** ist der Einstieg: ein Rechteck über die Fläche ziehen, danach den Namen
-  aus einer Liste bestätigen. Die Liste stammt aus dem „Wo finde ich was?“-Wegweiser der
-  Bibliothek, ein eigener Name geht auch. Ein Zug, ein Tipp — mehr nicht.
+Die Bibliothek ist ein **Großraum**: außer Aufzug und Treppenhaus gibt es kaum
+umschlossene Räume. „Kinderbibliothek“ ist ein Stück offener Halle, keine Kante im Plan.
+Dafür gibt es zwei Wege, und der zweite ist der ehrlichere:
+
+- **Bereich zeichnen:** ein Rechteck über die Fläche ziehen, danach den Namen aus einer
+  Liste bestätigen. Die Liste stammt aus dem „Wo finde ich was?“-Wegweiser der Bibliothek,
+  ein eigener Name geht auch. Die Grenze ist dann eine Festlegung, keine bauliche Tatsache —
+  das ist für einen Wegweiser völlig ausreichend.
+- **Bereich aus Regalen bilden:** erst die Regale einzeichnen (die sind im Plan sichtbar),
+  dann **Sammeln** einschalten, die zusammengehörigen Regale antippen und **Bereich
+  bilden…** wählen. Die Fläche wird um die Regale herum gelegt, und jedes Regal merkt sich
+  seine Zugehörigkeit. So muss keine Grenze erfunden werden.
 - **Regal/Theke** sind Strecken (Anfang antippen, Ende antippen), **Treppe/Aufzug**
   ebenfalls Rechtecke. **Fläche frei** zeichnet Ecke für Ecke, für unregelmäßige Zuschnitte;
   abgeschlossen wird über den sichtbaren **Fertig**-Knopf.

@@ -3,6 +3,10 @@
   Grundrissen einzeichnen. Ergebnis ist ein JSON-Baum, der je Regal den
   Signaturbereich traegt (siehe README).
 
+  Die Bibliothek ist ein Grossraum: ausser Aufzug und Treppenhaus gibt es kaum
+  umschlossene Raeume. Ein Bereich laesst sich deshalb auch aus den Regalen
+  bilden, die zu ihm gehoeren, statt eine Grenze zu erfinden.
+
   Bewusst ohne Framework: die Seite ist ein eigenstaendiges Werkzeug und soll
   auch dann noch laufen, wenn die React-App darunter umgebaut wird.
 */
@@ -56,6 +60,8 @@ let state = {
   draft: null,       // in-progress geometry
   calibrating: false,
   calibTarget: null, // bekanntes Mass in Metern, falls vorgewaehlt
+  multi: false,      // Sammelmodus: mehrere Objekte antippen
+  picked: new Set(), // deren ids
 };
 FLOOR_IDS.forEach((f) => {
   state.data[f] = { objekte: [], kalibrierung: null };
@@ -176,9 +182,15 @@ function render() {
 
   gObj.textContent = "";
   const strokeW = 0.9 / v.k;
-  cur().objekte.forEach((o) => {
+  // Flaechen zuerst, damit Regale und Theken darueber liegen und sichtbar bleiben
+  const ordered = [
+    ...cur().objekte.filter((o) => o.form === "flaeche"),
+    ...cur().objekte.filter((o) => o.form !== "flaeche"),
+  ];
+  ordered.forEach((o) => {
     const t = TYPES[o.typ];
     const isSel = o.id === state.selectedId;
+    const isPicked = state.picked.has(o.id);
     const g = el("g");
     g.style.cursor = "pointer";
 
@@ -200,7 +212,17 @@ function render() {
       g.append(vis);
     }
 
-    if (isSel) {
+    if (isPicked) {
+      const d = o.punkte.map((p, i) => (i ? "L" : "M") + p[0] + " " + p[1]).join(" ")
+        + (o.form === "flaeche" ? " Z" : "");
+      g.append(el("path", {
+        d, fill: "none", stroke: "var(--accent)",
+        "stroke-width": strokeW * 3.4, "stroke-linecap": "round",
+        "stroke-dasharray": `${strokeW*4} ${strokeW*3}`, opacity: .95,
+      }));
+    }
+
+    if (isSel && !state.multi) {
       o.punkte.forEach((p, i) => {
         const h = el("circle", {
           cx: p[0], cy: p[1], r: Math.max(0.7, 5 / v.k),
@@ -215,6 +237,12 @@ function render() {
     g.addEventListener("pointerdown", (e) => {
       if (state.tool !== "select") return;
       e.stopPropagation();
+      if (state.multi) {
+        if (state.picked.has(o.id)) state.picked.delete(o.id);
+        else state.picked.add(o.id);
+        render(); renderSide();
+        return;
+      }
       const hi = e.target.dataset && e.target.dataset.handle;
       state.selectedId = o.id;
       beginDrag(e, o, hi != null ? Number(hi) : null);
@@ -473,15 +501,18 @@ function mkBtn(label, cls, fn) {
 }
 
 /** Nach dem Zeichnen einer Flaeche: „Ja, das ist der Bereich X.“ */
-function askAreaName(obj, isNew) {
+function askAreaName(obj, isNew, onPick) {
   const usedNames = new Set(
     FLOOR_IDS.flatMap((f) => state.data[f].objekte.filter((o) => o.id !== obj.id).map((o) => o.name))
   );
   let chosen = null;
 
   const commit = (name) => {
-    if (name && name.trim()) { obj.name = name.trim(); save(); }
-    closeSheet(); render(); renderSide();
+    const clean = (name || "").trim();
+    if (!clean) { closeSheet(); return; }
+    closeSheet();
+    if (onPick) { onPick(clean); return; }
+    obj.name = clean; save(); render(); renderSide();
   };
 
   openSheet({
@@ -667,6 +698,10 @@ function renderHint() {
     h.textContent = "Maßstab: eine Strecke ziehen, deren echte Länge du kennst (z. B. die lange Außenwand). Danach die Länge in Metern eingeben.";
     return;
   }
+  if (state.multi) {
+    h.textContent = "Sammeln: alle Regale antippen, die zusammengehören (z. B. alle Regale der Kinderbibliothek). Danach rechts „Bereich bilden“ — die Fläche wird um die Regale herum gelegt.";
+    return;
+  }
   const nothingYet = FLOOR_IDS.every((f) => !state.data[f].objekte.length);
   if (state.tool === "select" && nothingYet) {
     h.textContent = "Mit „Bereich“ anfangen: ein Rechteck über die Fläche ziehen, danach den Namen aus der Liste antippen. Maßstab ist optional und geht jederzeit später.";
@@ -687,6 +722,16 @@ function renderHint() {
 
 /* ---------------- sidebar ---------------- */
 function renderSide() {
+  const msec = document.getElementById("multiSec");
+  msec.hidden = !state.multi;
+  if (state.multi) {
+    const n = state.picked.size;
+    document.getElementById("multiCount").textContent = n
+      ? `${n} ${n === 1 ? "Objekt" : "Objekte"} markiert`
+      : "Objekte im Plan antippen, die zusammen einen Bereich bilden.";
+    document.getElementById("makeAreaBtn").disabled = n === 0;
+  }
+
   const list = document.getElementById("objList");
   list.textContent = "";
   const objs = cur().objekte;
@@ -704,13 +749,27 @@ function renderSide() {
       dot.className = "dot"; dot.style.background = TYPES[o.typ].color;
       const nm = document.createElement("span");
       nm.className = "nm"; nm.textContent = o.name;
+      if (o.bereich) {
+        const tag = document.createElement("span");
+        tag.className = "meta";
+        tag.style.cssText = "flex:none;color:var(--t-zone)";
+        tag.textContent = "▸ " + o.bereich;
+        nm.append(document.createElement("br"), tag);
+      }
       const meta = document.createElement("span");
       meta.className = "meta";
       meta.textContent = o.form === "linie" ? fmtLen(lineLen(o.punkte)) : TYPES[o.typ].label;
       b.append(dot, nm, meta);
       b.addEventListener("click", () => {
-        state.selectedId = o.id; setTool("select"); render(); renderSide();
+        if (state.multi) {
+          if (state.picked.has(o.id)) state.picked.delete(o.id);
+          else state.picked.add(o.id);
+        } else {
+          state.selectedId = o.id; setTool("select");
+        }
+        render(); renderSide();
       });
+      if (state.picked.has(o.id)) b.style.boxShadow = "inset 3px 0 0 var(--accent)";
       list.append(b);
     });
   }
@@ -745,6 +804,37 @@ function renderProps() {
   sel.addEventListener("change", () => { snapshot(); o.typ = sel.value; save(); render(); renderSide(); });
   typeSel.append(ts, sel);
   box.append(typeSel);
+
+  // Zuordnung zu einem Bereich — fuer Grossraeume der Ersatz fuer eine Grenze
+  if (o.form === "linie") {
+    const areas = [...new Set(
+      FLOOR_IDS.flatMap((f) => state.data[f].objekte.filter((x) => x.typ === "bereich").map((x) => x.name))
+    )].sort();
+    const l = document.createElement("label");
+    l.className = "f";
+    const s = document.createElement("span"); s.textContent = "Gehört zu Bereich";
+    const sel2 = document.createElement("select");
+    sel2.className = "inp";
+    const none = document.createElement("option");
+    none.value = ""; none.textContent = "— nicht zugeordnet —";
+    none.selected = !o.bereich;
+    sel2.append(none);
+    areas.forEach((n) => {
+      const op = document.createElement("option");
+      op.value = n; op.textContent = n; op.selected = o.bereich === n;
+      sel2.append(op);
+    });
+    if (o.bereich && !areas.includes(o.bereich)) {
+      const op = document.createElement("option");
+      op.value = o.bereich; op.textContent = o.bereich; op.selected = true;
+      sel2.append(op);
+    }
+    sel2.addEventListener("change", () => {
+      o.bereich = sel2.value || null; save(); renderSide();
+    });
+    l.append(s, sel2);
+    box.append(l);
+  }
 
   if (o.typ === "regal") {
     const wrap = document.createElement("div");
@@ -880,6 +970,8 @@ function buildExport() {
             rec.laengeEinheiten = round(L);
             if (mpu) rec.laengeMeter = Math.round(L * mpu * 100) / 100;
           }
+          if (o.bereich) rec.bereich = o.bereich;
+          if (o.ausRegalen) rec.ausRegalen = o.ausRegalen;
           if (o.typ === "regal") {
             rec.signaturVon = o.signaturVon || null;
             rec.signaturBis = o.signaturBis || null;
@@ -963,6 +1055,7 @@ document.getElementById("fileInput").addEventListener("change", (e) => {
         state.data[et.id].objekte = (et.objekte || []).map((o) => ({
           id: o.id || uid(), typ: o.typ, form: o.form, name: o.name,
           punkte: o.punkte,
+          bereich: o.bereich || null,
           signaturVon: o.signaturVon || "", signaturBis: o.signaturBis || "",
           faecher: o.faecher ?? null,
         }));
@@ -979,6 +1072,55 @@ document.getElementById("fileInput").addEventListener("change", (e) => {
 });
 
 document.getElementById("calibBtn").addEventListener("click", startCalibration);
+
+/* ---------------- Sammelmodus ---------------- */
+const multiBtn = document.getElementById("multiBtn");
+multiBtn.addEventListener("click", () => {
+  state.multi = !state.multi;
+  multiBtn.setAttribute("aria-pressed", String(state.multi));
+  multiBtn.classList.toggle("primary", state.multi);
+  if (!state.multi) state.picked.clear();
+  else { state.tool = "select"; setTool("select"); }
+  render(); renderSide(); renderHint();
+});
+document.getElementById("clearPickBtn").addEventListener("click", () => {
+  state.picked.clear(); render(); renderSide();
+});
+
+/** Aus den markierten Objekten einen Bereich formen: Rechteck um alles herum,
+    und jedes Objekt bekommt den Bereichsnamen zugeordnet. Fuer einen Grossraum
+    ohne Waende ist das der ehrlichere Weg als eine erfundene Grenze. */
+document.getElementById("makeAreaBtn").addEventListener("click", () => {
+  const objs = cur().objekte.filter((o) => state.picked.has(o.id));
+  if (!objs.length) return;
+
+  const stub = { id: "__neu__", name: "Bereich" };
+  askAreaName(stub, false, (name) => {
+    const pts = objs.flatMap((o) => o.punkte);
+    const uh = unitH(state.floor);
+    const pad = 1.2;
+    const x0 = Math.max(0, Math.min(...pts.map((p) => p[0])) - pad);
+    const x1 = Math.min(100, Math.max(...pts.map((p) => p[0])) + pad);
+    const y0 = Math.max(0, Math.min(...pts.map((p) => p[1])) - pad);
+    const y1 = Math.min(uh, Math.max(...pts.map((p) => p[1])) + pad);
+
+    snapshot();
+    const area = {
+      id: uid(), typ: "bereich", form: "flaeche",
+      punkte: [[round(x0), round(y0)], [round(x1), round(y0)], [round(x1), round(y1)], [round(x0), round(y1)]],
+      name,
+      ausRegalen: objs.length,
+    };
+    cur().objekte.push(area);
+    objs.forEach((o) => { o.bereich = name; });
+    state.picked.clear();
+    state.multi = false;
+    multiBtn.setAttribute("aria-pressed", "false");
+    multiBtn.classList.remove("primary");
+    state.selectedId = area.id;
+    save(); render(); renderSide(); renderHint();
+  });
+});
 
 document.getElementById("undoBtn").addEventListener("click", undo);
 
